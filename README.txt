@@ -1,13 +1,13 @@
-Shithead v22 Firebase Multiplayer
+Shithead v24 - Firebase Anonymous Authentication
 
-Upload index.html, single.html, and multiplayer.html to the same GitHub Pages repo.
+Upload:
+- index.html
+- single.html
+- multiplayer.html
 
-No service worker is included.
+Then in Firebase Realtime Database > Rules, replace the public test rules with the contents of firebase-rules.json and Publish.
 
-Firebase Realtime Database is used for:
-- multiplayer rooms
-- cross-network game synchronization
-- usernames
-- shared multiplayer win leaderboard
+Players do NOT create accounts. Firebase silently signs them in anonymously before room or leaderboard access.
 
-Current leaderboard rule: first player to get rid of all cards receives the win.
+These rules are substantially safer than public rules because unauthenticated internet traffic is denied.
+They still allow any authenticated Shithead client to write room/leaderboard data; a later hardening step can restrict writes more narrowly by room membership/host.

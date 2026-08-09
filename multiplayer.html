@@ -6,6 +6,7 @@
 <title>Shithead Multiplayer</title>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <style>
 :root{--bg:#0f5132;--panel:#0b3d28;--card:#fff;--ink:#111;--muted:#d7e6de;--accent:#ffd166;--danger:#ff6b6b}
 *{box-sizing:border-box}
@@ -42,7 +43,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v22</div>
+<div class="small">Firebase multiplayer v24 · protected by anonymous auth</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button">Leaderboard</button>
@@ -127,6 +128,18 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 const firebaseConfig = {"apiKey": "AIzaSyDDpDw3W4w2izXCi2a4PltZusEUtlPJ_4A", "authDomain": "shithead-game-5c332.firebaseapp.com", "databaseURL": "https://shithead-game-5c332-default-rtdb.firebaseio.com/", "projectId": "shithead-game-5c332", "storageBucket": "shithead-game-5c332.firebasestorage.app", "messagingSenderId": "1004520259081", "appId": "1:1004520259081:web:aa52509990f58b50d142d8", "measurementId": "G-53LYNRDSK0"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
+const auth=firebase.auth();
+let authUser=null;
+
+async function ensureAuth(){
+  if(auth.currentUser){
+    authUser=auth.currentUser;
+    return authUser;
+  }
+  const result=await auth.signInAnonymously();
+  authUser=result.user;
+  return authUser;
+}
 
 const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const suits=['♥','♦','♣','♠'];
@@ -144,7 +157,7 @@ function username(){
 }
 function cleanRoom(v){return (v||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function makeRoom(){return 'SH'+Math.random().toString(36).slice(2,7).toUpperCase()}
-function makeId(){return 'p_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36)}
+function makeId(){return authUser?.uid || ('p_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36))}
 function show(id){$(id).classList.remove('hidden')}
 function hide(id){$(id).classList.add('hidden')}
 function showOnly(id){['home','lobby','setup','game'].forEach(x=>x===id?show(x):hide(x))}
@@ -172,6 +185,8 @@ function listenRoom(){
 
 async function hostGame(){
   const name=username();if(!name)return;
+  setMsg('Signing in…');
+  await ensureAuth();
   roomCode=makeRoom();myId=makeId();isHost=true;
   roomRef=db.ref('rooms/'+roomCode);
   setMsg('Creating room…');
@@ -179,15 +194,18 @@ async function hostGame(){
   if(existing){roomCode=makeRoom();roomRef=db.ref('rooms/'+roomCode)}
   await roomRef.set({
     hostId:myId,
+    hostUid:authUser.uid,
     phase:'lobby',
     createdAt:firebase.database.ServerValue.TIMESTAMP,
-    players:{[myId]:{id:myId,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP}}
+    players:{[myId]:{id:myId,uid:authUser.uid,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP}}
   });
   listenRoom();setMsg('');
 }
 
 async function joinGame(){
   const name=username();if(!name)return;
+  setMsg('Signing in…');
+  await ensureAuth();
   roomCode=cleanRoom($('roomInput').value);$('roomInput').value=roomCode;
   if(!roomCode){setMsg('Enter the room code.');return}
   roomRef=db.ref('rooms/'+roomCode);
@@ -197,7 +215,7 @@ async function joinGame(){
   const data=snap.val();
   if(data.phase!=='lobby'){setMsg('That game has already started.');return}
   myId=makeId();isHost=false;
-  await roomRef.child('players/'+myId).set({id:myId,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP});
+  await roomRef.child('players/'+myId).set({id:myId,uid:authUser.uid,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP});
   listenRoom();setMsg('');
 }
 
@@ -233,7 +251,7 @@ async function deal(){
     const players=normalizePlayers(cur.players);
     if(players.length<2)return cur;
     const deck=makeDeck(players.length);
-    const ps=players.map(p=>({id:p.id,name:p.name,hand:[],face:[],down:[],ready:false,finished:false}));
+    const ps=players.map(p=>({id:p.id,uid:p.uid||p.id,name:p.name,hand:[],face:[],down:[],ready:false,finished:false}));
     for(let r=0;r<3;r++)for(const p of ps)p.down.push(deck.pop());
     for(let r=0;r<3;r++)for(const p of ps)p.face.push(deck.pop());
     for(let r=0;r<3;r++)for(const p of ps)p.hand.push(deck.pop());
@@ -335,6 +353,7 @@ function finishCheck(cur,players,i){
 }
 async function recordWinnerIfNeeded(){
   if(!room?.game?.winnerRecorded||!room.game.winnerName||room.game.leaderboardSaved)return;
+  await ensureAuth();
   if(!isHost)return;
   const name=room.game.winnerName;
   const safe=name.toLowerCase().replace(/[.#$/\[\]]/g,'_');
@@ -438,6 +457,7 @@ async function playDown(id){
 }
 
 async function showLeaderboard(){
+  await ensureAuth();
   $('leaderRows').innerHTML='<div class="small">Loading…</div>';
   $('leaderModal').classList.add('open');
   const snap=await db.ref('leaderboard').once('value');
