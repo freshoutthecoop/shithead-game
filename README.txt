@@ -1,11 +1,11 @@
-Shithead v44
+Shithead v45
 
-Walkthrough toggle fix:
-- Removed duplicate/conflicting walkthrough click handlers.
-- Single player now uses one dedicated toggle function.
-- Multiplayer now uses one dedicated toggle function.
-- Button text changes immediately between Walkthrough: Off and Walkthrough: On.
-- aria-pressed state updates as well.
-- When toggled during a game, playable-card highlighting rerenders immediately.
+Visual updates:
+- Opponents' visible cards are slightly larger for easier reading while keeping compact player strips.
+- Joker is now strictly black and white.
+- JOKER is written in black.
+- Center symbol is a pair of intertwined/crossing reverse-direction arrows.
+- Removed the clown and purple/gold Joker styling.
+- Joker scales appropriately in your hand, face-up cards, opponent cards, and pile.
 
-All v43 features remain.
+All v44 gameplay/features remain unchanged.
