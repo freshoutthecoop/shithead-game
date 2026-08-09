@@ -76,6 +76,173 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
   #opponents .card.joker .rank{font-size:7px}
   #opponents .card.joker .suit{font-size:11px}
 }
+
+.chatTitleRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.chatBadge{display:none;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#d62828;color:white;font-size:12px;font-weight:900;align-items:center;justify-content:center}
+.chatBadge.show{display:inline-flex}
+.chatToast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;max-width:min(92vw,420px);background:#fff;color:#17221c;border-radius:12px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.3);font-size:13px;font-weight:700;display:none}
+.chatToast.show{display:block}
+
+/* v37 compact phone layout */
+#game{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+#opponents{
+  display:flex !important;
+  flex-direction:column;
+  gap:3px !important;
+}
+#opponents .player{
+  display:grid !important;
+  grid-template-columns:minmax(78px,1fr) auto auto minmax(74px,auto);
+  align-items:center;
+  gap:5px;
+  padding:4px 6px !important;
+  min-height:36px;
+}
+#opponents .name{font-size:12px;font-weight:900}
+#opponents .small{font-size:9px !important}
+#opponents .cards{gap:1px !important;flex-wrap:nowrap !important;justify-content:flex-end}
+#opponents .card{width:19px !important;height:27px !important;padding:1px !important;border-width:1px !important}
+#opponents .rank,#opponents .suit{font-size:8px !important}
+
+.pile{
+  order:2;
+  padding:6px 9px !important;
+  border-radius:10px !important;
+  min-height:72px;
+}
+#topCard .card{
+  width:46px !important;
+  height:64px !important;
+  padding:3px !important;
+}
+#topCard .rank{font-size:15px !important}
+#topCard .suit{font-size:16px !important}
+
+#game > .panel:last-of-type{
+  order:3;
+  padding:6px !important;
+  margin:0 !important;
+  border-radius:10px !important;
+}
+
+#status{
+  padding:6px 8px;
+  background:rgba(255,255,255,.08);
+  border-radius:8px;
+  font-size:12px;
+  margin-bottom:5px;
+}
+
+#yourFace,#yourDown{
+  margin:3px 0 6px !important;
+  gap:3px !important;
+  flex-wrap:nowrap !important;
+}
+#yourFace .card,#yourDown .card{
+  width:31px !important;
+  height:43px !important;
+  padding:2px !important;
+  border-radius:5px !important;
+}
+#yourFace .rank,#yourDown .rank{font-size:10px !important}
+#yourFace .suit,#yourDown .suit{font-size:11px !important}
+
+/* Hand as an overlapping horizontal tray */
+#yourHand{
+  margin:4px 0 8px !important;
+  padding:5px 8px 8px 2px !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:visible !important;
+  min-height:80px;
+  align-items:flex-end;
+}
+#yourHand .card{
+  width:52px !important;
+  height:72px !important;
+  flex:0 0 auto !important;
+  margin-left:-18px !important;
+  position:relative;
+  z-index:1;
+}
+#yourHand .card:first-child{margin-left:0 !important}
+#yourHand .card.selected{transform:translateY(-7px);z-index:30}
+#yourHand .card:hover{z-index:20}
+#yourHand .rank{font-size:15px !important}
+#yourHand .suit{font-size:17px !important}
+
+#game .row:has(#playBtn){
+  display:grid !important;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+#playBtn,#pickupBtn{
+  padding:9px 8px !important;
+  font-size:14px !important;
+}
+
+/* Chat and history become collapsible bars */
+.chatBox,.historyBox{
+  padding:0 !important;
+  margin-top:6px !important;
+  border-radius:9px !important;
+  overflow:hidden;
+}
+.chatTitleRow,
+.historyBox > .small:first-child{
+  padding:8px 9px;
+  margin:0 !important;
+  background:rgba(0,0,0,.10);
+  cursor:pointer;
+}
+.chatMessages,.chatRow,.historyList{
+  display:none;
+}
+.chatBox.open .chatMessages,
+.chatBox.open .chatRow,
+.historyBox.open .historyList{
+  display:flex;
+}
+.chatBox.open .chatRow{
+  display:grid;
+  padding:0 8px 8px;
+}
+.chatBox.open .chatMessages{
+  padding:8px;
+  max-height:120px;
+}
+.historyBox.open .historyList{
+  padding:8px;
+  max-height:130px;
+}
+.chatTitleRow::after,
+.historyBox > .small:first-child::after{
+  content:'▾';
+  float:right;
+  color:#fff;
+}
+.chatBox.open .chatTitleRow::after,
+.historyBox.open > .small:first-child::after{
+  content:'▴';
+}
+
+/* replay box stays compact */
+#replayBox{
+  padding:8px !important;
+  margin-top:6px !important;
+}
+
+@media(max-width:650px){
+  .wrap{padding:6px !important}
+  h1{font-size:19px;margin:2px 0 4px}
+  .topActions{margin-bottom:4px}
+  .topActions .btn{padding:7px 9px;font-size:12px}
+}
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -85,10 +252,11 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <link rel="manifest" href="manifest.webmanifest?v=29">
 </head>
 <body>
+<div id="chatToast" class="chatToast"></div>
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v35 · two-player 8 rule</div>
+<div class="small">Firebase multiplayer v37 · compact layout</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -143,7 +311,10 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
       <button id="replayBtn" class="btn primary" type="button">Play Again</button>
     </div>
     <div class="chatBox">
-      <div class="small" style="font-weight:800;margin-bottom:5px">GAME CHAT</div>
+      <div class="chatTitleRow">
+        <div class="small" style="font-weight:800">GAME CHAT</div>
+        <span id="chatBadge" class="chatBadge">1</span>
+      </div>
       <div id="chatMessages" class="chatMessages"></div>
       <div class="chatRow">
         <input id="chatInput" maxlength="180" placeholder="Message players…" />
@@ -192,6 +363,10 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 const auth=firebase.auth();
 let authUser=null;
+let lastSeenChatTs=0;
+let lastNotifiedChatKey=null;
+let unreadChat=0;
+let toastTimer=null;
 let authReadyResolve, authReadyReject;
 const authReady=new Promise((resolve,reject)=>{authReadyResolve=resolve;authReadyReject=reject});
 
@@ -514,6 +689,13 @@ async function recordWinnerIfNeeded(){
   await roomRef.child('game/leaderboardSaved').set(true);
 }
 
+
+function currentRequirement(g){
+  const top=meaningfulTop(g);
+  if(!top)return 'ANY';
+  if(top.rank==='7')return '≤7';
+  return top.rank+'+';
+}
 function renderGame(){
   recordWinnerIfNeeded().catch(()=>{});
   const players=getPlayers(),p=me(),g=game();if(!p||!g)return;
@@ -528,7 +710,9 @@ function renderGame(){
       <div class="cards">${sortCards(x.face||[]).map(c=>cardHTML(c)).join('')}</div>
     </div>`;
   }).join('');
-  $('drawCount').textContent=(g.draw||[]).length;$('direction').textContent=g.direction===1?'↻':'↺';$('pileCount').textContent=`Pile ${(g.pile||[]).length}`;
+  $('drawCount').textContent=(g.draw||[]).length;
+  $('direction').innerHTML=`<div style="font-size:9px;color:var(--muted);font-weight:800">PLAY</div><div style="font-size:20px;font-weight:900;color:var(--accent)">${currentRequirement(g)}</div><div style="font-size:10px;color:var(--muted)">${g.direction===1?'↻':'↺'}</div>`;
+  $('pileCount').textContent=`Pile ${(g.pile||[]).length}`;
   const top=(g.pile||[])[(g.pile||[]).length-1];$('topCard').innerHTML=top?cardHTML(top):'<div class="small">Empty</div>';
   $('status').textContent=g.message+(room.phase==='play'&&g.current===meIndex?' Your turn.':'');
   const zone=activeZone(p,g);
@@ -881,15 +1065,62 @@ function renderHistory(){
   box.scrollTop=box.scrollHeight;
 }
 function renderChat(){
-  const msgs=room?.chat?Object.values(room.chat):[];
-  msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
-  const recent=msgs.slice(-50);
+  const entries=room?.chat?Object.entries(room.chat):[];
+  entries.sort((a,b)=>(a[1].ts||0)-(b[1].ts||0));
+  const recent=entries.slice(-50);
   const box=$('chatMessages');
   if(!box)return;
+
   box.innerHTML=recent.length
-    ? recent.map(m=>`<div class="chatMessage"><strong>${escapeHtml(m.name||'Player')}:</strong>${escapeHtml(m.text||'')}</div>`).join('')
+    ? recent.map(([key,m])=>`<div class="chatMessage"><strong>${escapeHtml(m.name||'Player')}:</strong>${escapeHtml(m.text||'')}</div>`).join('')
     : '<div class="small">No messages yet.</div>';
+
+  const newest=entries.length?entries[entries.length-1]:null;
+  if(newest){
+    const [key,m]=newest;
+    const ts=m.ts||0;
+
+    // Only notify for a newly-arrived message from somebody else.
+    if(lastSeenChatTs && ts>lastSeenChatTs && m.uid!==authUser?.uid && key!==lastNotifiedChatKey){
+      unreadChat++;
+      lastNotifiedChatKey=key;
+      showChatNotification(m);
+    }
+    if(ts>lastSeenChatTs)lastSeenChatTs=ts;
+  }
+
+  updateChatBadge();
   box.scrollTop=box.scrollHeight;
+}
+function updateChatBadge(){
+  const badge=$('chatBadge');
+  if(!badge)return;
+  if(unreadChat>0){
+    badge.textContent=unreadChat>9?'9+':String(unreadChat);
+    badge.classList.add('show');
+  }else{
+    badge.classList.remove('show');
+  }
+}
+function showChatNotification(m){
+  const toast=$('chatToast');
+  if(toast){
+    toast.textContent=`${m.name||'Player'}: ${m.text||''}`;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>toast.classList.remove('show'),3500);
+  }
+
+  // Give a small vibration on supported phones.
+  if(navigator.vibrate)navigator.vibrate(120);
+
+  // Update browser/app title while there is an unread message.
+  document.title='💬 New message · Shithead';
+}
+function clearChatNotifications(){
+  unreadChat=0;
+  updateChatBadge();
+  document.title='Shithead';
 }
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -938,8 +1169,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('playBtn').onclick=()=>playSelected().catch(e=>setMsg(e.message));
   $('pickupBtn').onclick=()=>pickup().catch(e=>setMsg(e.message));
   $('replayBtn').onclick=()=>requestReplay().catch(e=>setMsg(e.message));
-  $('chatSend').onclick=()=>sendChat().catch(e=>setMsg(e.message));
-  $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat().catch(err=>setMsg(err.message))});
+  $('chatSend').onclick=()=>{clearChatNotifications();sendChat().catch(e=>setMsg(e.message))};
+  $('chatInput').addEventListener('focus',clearChatNotifications);
+  $('chatMessages').addEventListener('click',clearChatNotifications);
+  $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){clearChatNotifications();sendChat().catch(err=>setMsg(err.message))}});
+  document.querySelector('.chatTitleRow')?.addEventListener('click',()=>{
+    document.querySelector('.chatBox')?.classList.toggle('open');
+    clearChatNotifications();
+  });
+  document.querySelector('.historyBox > .small:first-child')?.addEventListener('click',()=>{
+    document.querySelector('.historyBox')?.classList.toggle('open');
+  });
+
   $('helpBtn').onclick=()=>$('helpModal').classList.add('open');
   $('helpClose').onclick=()=>$('helpModal').classList.remove('open');
   $('helpModal').onclick=e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('open')};

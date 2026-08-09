@@ -1,11 +1,12 @@
-Shithead v35
+Shithead v37
 
-8 rule clarified:
-- Each 8 skips one other player.
-- In a 2-player game, there is only one other player, so ANY number of 8s means the person who played them goes again.
-- One 8 in a 2-player game -> same player again.
-- Two 8s in a 2-player game -> same player again.
-- A 4 replaying an 8 in a 2-player game -> same player again.
-- With 3+ active players, stacked 8s skip that many successive opponents, then play continues to the next player.
-
-All v34/v33 features remain.
+Compact visual redesign based on the approved preview:
+- Opponents shown as narrow horizontal strips.
+- Center pile area emphasizes the current play requirement (e.g. 9+ or ≤7).
+- Face-up and face-down cards are much smaller.
+- Your hand is an overlapping horizontal card tray.
+- Large hands scroll horizontally instead of making the page taller.
+- Play and Pick Up stay directly under the hand.
+- Chat and Turn History are collapsed by default and expand when tapped.
+- Existing Firebase multiplayer, auth, leaderboard, chat notifications, turn history,
+  rematch, sorted hands, app icon, Joker styling, and card rules are preserved.

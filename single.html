@@ -43,6 +43,53 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
   #opponents .card.joker .rank{font-size:7px}
   #opponents .card.joker .suit{font-size:11px}
 }
+
+/* v37 compact single-player layout */
+#opponents{
+  display:flex !important;
+  flex-direction:column;
+  gap:3px !important;
+}
+#opponents .player{
+  display:grid !important;
+  grid-template-columns:minmax(78px,1fr) auto auto minmax(74px,auto);
+  align-items:center;
+  gap:5px;
+  padding:4px 6px !important;
+  min-height:36px;
+}
+#opponents .cards{gap:1px !important;flex-wrap:nowrap !important;justify-content:flex-end}
+#opponents .card{width:19px !important;height:27px !important;padding:1px !important;border-width:1px !important}
+#opponents .rank,#opponents .suit{font-size:8px !important}
+#yourFace,#yourDown{gap:3px !important;flex-wrap:nowrap !important;margin:3px 0 6px !important}
+#yourFace .card,#yourDown .card{width:31px !important;height:43px !important;padding:2px !important}
+#yourFace .rank,#yourDown .rank{font-size:10px !important}
+#yourFace .suit,#yourDown .suit{font-size:11px !important}
+#yourHand{
+  margin:4px 0 8px !important;
+  padding:5px 8px 8px 2px !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  min-height:80px;
+  align-items:flex-end;
+}
+#yourHand .card{
+  width:52px !important;
+  height:72px !important;
+  flex:0 0 auto !important;
+  margin-left:-18px !important;
+  position:relative;
+}
+#yourHand .card:first-child{margin-left:0 !important}
+#yourHand .card.selected{transform:translateY(-7px);z-index:30}
+#yourHand .rank{font-size:15px !important}
+#yourHand .suit{font-size:17px !important}
+@media(max-width:650px){
+  .wrap{padding:6px !important}
+  h1{font-size:19px;margin:2px 0 4px}
+  .panel{padding:7px !important;margin:5px 0 !important}
+}
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
