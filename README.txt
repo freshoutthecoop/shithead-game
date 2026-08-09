@@ -1,11 +1,12 @@
-Shithead v45
+Shithead v50
 
-Visual updates:
-- Opponents' visible cards are slightly larger for easier reading while keeping compact player strips.
-- Joker is now strictly black and white.
-- JOKER is written in black.
-- Center symbol is a pair of intertwined/crossing reverse-direction arrows.
-- Removed the clown and purple/gold Joker styling.
-- Joker scales appropriately in your hand, face-up cards, opponent cards, and pile.
+Global leaderboard update:
+- Most Wins leaderboard: ranked by first-place finishes.
+- Most Shitheads leaderboard: ranked by times a player is the final remaining player.
+- Each row also shows the player's other stat.
+- Only completed multiplayer games count toward Shithead totals.
+- Existing win counts are preserved.
+- Existing leaderboard entries without shithead data are treated as 0.
 
-All v44 gameplay/features remain unchanged.
+All v49 gameplay, layouts, difficulty, walkthrough, chat, turn history,
+rematch, Firebase auth, app icon, and card-rule fixes remain.
