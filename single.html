@@ -12,7 +12,7 @@ button,select{font:inherit}.wrap{max-width:720px;margin:0 auto;padding:14px 12px
 h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;margin:10px 0}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.small{font-size:13px;color:var(--muted)}
 .status{min-height:42px;font-weight:700}.players{display:grid;grid-template-columns:1fr 1fr;gap:8px}.player{background:rgba(255,255,255,.08);border-radius:12px;padding:8px}
-.active{outline:2px solid var(--accent)}.finished{opacity:.5}.oppCount{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:32px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.16);font-size:18px;font-weight:900}.oppMeta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}.cards{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end}
+.active{outline:2px solid var(--accent)}.finished{opacity:.5}.cards{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end}
 .card{width:56px;height:78px;background:var(--card);color:var(--ink);border-radius:8px;border:2px solid #ddd;display:flex;flex-direction:column;justify-content:space-between;padding:5px;font-weight:800;box-shadow:0 2px 5px rgba(0,0,0,.25);user-select:none}
 .card.red{color:#c62828}.card.back{background:repeating-linear-gradient(45deg,#1d3557,#1d3557 6px,#457b9d 6px,#457b9d 12px);border-color:#d8e2ef;color:transparent}
 .card.selectable{cursor:pointer}.card.selected{transform:translateY(-9px);outline:3px solid var(--accent)}.rank{font-size:20px;line-height:1}.suit{font-size:22px;align-self:flex-end}
@@ -21,17 +21,8 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
 </style>
-
-<meta name="theme-color" content="#0f5132" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Shithead" />
-<link rel="manifest" href="manifest.webmanifest" />
-<link rel="apple-touch-icon" href="icon-180.png" />
 </head>
-<body><div style="max-width:760px;margin:0 auto;padding:8px 12px 0">
-<a href="index.html" style="display:inline-block;text-decoration:none;background:rgba(255,255,255,.14);color:white;padding:9px 11px;border-radius:10px;font-weight:800">← Modes</a>
-</div>
+<body>
 <div class="wrap">
 <h1>Shithead</h1>
 <div id="start" class="panel">
@@ -91,22 +82,12 @@ function cardHTML(c,opts={}){
   const red=c.suit==='♥'||c.suit==='♦', txt=c.rank==='JOKER'?'🃏':c.rank;
   return `<div class="card ${red?'red':''} ${opts.back?'back':''} ${opts.cls||''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':txt}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
 }
-function sortCards(cards){
-  const suitOrder={'♥':0,'♦':1,'♣':2,'♠':3,'':4};
-  return [...cards].sort((a,b)=>(value[a.rank]-value[b.rank]) || ((suitOrder[a.suit]??9)-(suitOrder[b.suit]??9)));
-}
-function sortPlayerCards(p){
-  p.hand=sortCards(p.hand);
-  p.face=sortCards(p.face);
-}
-
 function deal(n){
   const deck=makeDeck(n), players=[];
   for(let i=0;i<n;i++) players.push({name:i===0?'You':`Computer ${i}`,hand:[],face:[],down:[],finished:false});
   for(let r=0;r<3;r++) for(const p of players) p.down.push(deck.pop());
   for(let r=0;r<3;r++) for(const p of players) p.face.push(deck.pop());
   for(let r=0;r<3;r++) for(const p of players) p.hand.push(deck.pop());
-  players.forEach(sortPlayerCards);
   G={players,draw:deck,pile:[],current:0,direction:1,phase:'setup',winnerOrder:[],message:'',mustLow:false};
   aiSetup(); renderSetup();
 }
@@ -114,7 +95,7 @@ function scoreCard(c){
   if(c.rank==='2')return 100;if(c.rank==='10')return 98;if(c.rank==='JOKER')return 94;if(c.rank==='4')return 90;if(c.rank==='8')return 82;if(c.rank==='7')return 70;return value[c.rank];
 }
 function aiSetup(){
-  for(let i=1;i<G.players.length;i++){const p=G.players[i], all=[...p.hand,...p.face].sort((a,b)=>scoreCard(b)-scoreCard(a));p.face=sortCards(all.slice(0,3));p.hand=sortCards(all.slice(3));}
+  for(let i=1;i<G.players.length;i++){const p=G.players[i], all=[...p.hand,...p.face].sort((a,b)=>scoreCard(b)-scoreCard(a));p.face=all.slice(0,3);p.hand=all.slice(3);}
 }
 function renderSetup(){
   $('start').classList.add('hidden');$('setup').classList.remove('hidden');
@@ -128,7 +109,6 @@ function setupTap(id){
   if(zone===selectedSetup.zone){selectedSetup={id,zone};highlightSetup();return}
   const a=selectedSetup.zone==='hand'?p.hand:p.face,b=zone==='hand'?p.hand:p.face;
   const ai=a.findIndex(c=>c.id===selectedSetup.id),bi=b.findIndex(c=>c.id===id);[a[ai],b[bi]]=[b[bi],a[ai]];
-  sortPlayerCards(p);
   selectedSetup=null;$('setupNote').textContent='';renderSetup();
 }
 function highlightSetup(){document.querySelectorAll('#setup .card').forEach(el=>el.classList.toggle('selected',el.dataset.id===selectedSetup?.id))}
@@ -149,7 +129,7 @@ function legal(c){
   if(G.mustLow)return value[c.rank]<=7;
   return value[c.rank]>=value[top.rank];
 }
-function drawUp(p){while(G.draw.length&&p.hand.length<3)p.hand.push(G.draw.pop());p.hand=sortCards(p.hand)}
+function drawUp(p){while(G.draw.length&&p.hand.length<3)p.hand.push(G.draw.pop())}
 function checkFinish(i){const p=G.players[i];if(!G.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;G.winnerOrder.push(i);G.message+=` ${p.name} is out!`}}
 function activeCount(){return G.players.filter(p=>!p.finished).length}
 function advance(steps){for(let s=0;s<steps;s++){let tries=0;do{G.current=(G.current+G.direction+G.players.length)%G.players.length;tries++}while(G.players[G.current].finished&&tries<=G.players.length)}}
@@ -172,7 +152,7 @@ function playCards(i,cards){
 }
 function pickup(i){
   const p=G.players[i];if(!G.pile.length)return;
-  p.hand.push(...G.pile);p.hand=sortCards(p.hand);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;advance(1);render();maybeAITurn();
+  p.hand.push(...G.pile);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;advance(1);render();maybeAITurn();
 }
 function availableZone(p){if(p.hand.length)return 'hand';if(G.draw.length)return 'hand';if(p.face.length)return 'face';return 'down'}
 function legalGroups(p){
@@ -206,14 +186,7 @@ function toggleSelect(id){
 }
 function render(){
   const p=G.players[0];
-  $('opponents').innerHTML=G.players.slice(1).map((q,idx)=>{
-    const total=q.hand.length+q.face.length+q.down.length;
-    return `<div class="player ${G.current===idx+1?'active':''} ${q.finished?'finished':''}">
-      <div class="oppMeta"><div style="font-weight:800">${q.name}${q.finished?' ✓':''}</div><div class="oppCount">${total} cards</div></div>
-      <div class="small">Hand ${q.hand.length} · Face-up ${q.face.length} · Face-down ${q.down.length}</div>
-      <div class="cards" style="margin-top:7px">${q.face.map(c=>cardHTML(c)).join('')}</div>
-    </div>`;
-  }).join('');
+  $('opponents').innerHTML=G.players.slice(1).map((q,idx)=>`<div class="player ${G.current===idx+1?'active':''} ${q.finished?'finished':''}"><div style="font-weight:800">${q.name}${q.finished?' ✓':''}</div><div class="small">Hand: ${q.hand.length}</div><div class="cards" style="margin-top:5px">${q.face.map(c=>cardHTML(c)).join('')}</div><div class="small">Face-down: ${q.down.length}</div></div>`).join('');
   $('drawCount').textContent=G.draw.length;$('pileCount').textContent=`Pile: ${G.pile.length} card${G.pile.length===1?'':'s'}`;$('direction').textContent=G.direction===1?'↻':'↺';
   const top=G.pile[G.pile.length-1];$('topCard').innerHTML=top?cardHTML(top,{cls:'pileCard'}):'<div class="small">Empty pile</div>';
   $('status').textContent=G.message+(G.phase==='play'&&G.current===0?' Your turn.':'');
