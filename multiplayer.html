@@ -4,7 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Shithead Multiplayer</title>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <style>
 :root{--bg:#0f5132;--panel:#0b3d28;--card:#fff;--ink:#111;--muted:#d7e6de;--accent:#ffd166;--danger:#ff6b6b}
 *{box-sizing:border-box}
@@ -13,19 +14,22 @@ button,input{font:inherit}.wrap{max-width:760px;margin:0 auto;padding:12px}
 h1{margin:4px 0 8px}.panel{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;margin:10px 0}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.small{font-size:13px;color:var(--muted)}
 .btn{border:0;border-radius:10px;padding:11px 13px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.45}
-input{border-radius:10px;border:0;padding:11px 12px;min-width:0}
-.hidden{display:none!important}.code{font-size:28px;font-weight:900;letter-spacing:3px}
-.players{display:grid;grid-template-columns:1fr;gap:5px}.player{background:rgba(255,255,255,.08);border-radius:10px;padding:7px}
+input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:none!important}.code{font-size:28px;font-weight:900;letter-spacing:3px}
+.players{display:grid;grid-template-columns:1fr;gap:4px}.player{background:rgba(255,255,255,.08);border-radius:9px;padding:6px}
 .cards{display:flex;gap:5px;flex-wrap:wrap}.card{width:54px;height:76px;background:white;color:#111;border-radius:8px;border:2px solid #ddd;padding:5px;display:flex;flex-direction:column;justify-content:space-between;font-weight:800;user-select:none}
 .card.red{color:#c62828}.card.back{background:repeating-linear-gradient(45deg,#1d3557,#1d3557 6px,#457b9d 6px,#457b9d 12px);color:transparent;border-color:#d8e2ef}
 .card.selectable{cursor:pointer}.card.selected{transform:translateY(-7px);outline:3px solid var(--accent)}
 .rank{font-size:19px}.suit{font-size:21px;align-self:flex-end}.status{font-weight:800;min-height:30px}
 .pile{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}.center{text-align:center}
 .active{outline:2px solid var(--accent)}.finished{opacity:.55}
+.topActions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+.modalBack{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:22px 12px;overflow:auto;z-index:10000}
+.modalBack.open{display:flex}.modal{width:100%;max-width:640px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:16px}
+.modal p,.modal li{line-height:1.45}.leaderRow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)}
 @media(max-width:650px){
   .wrap{padding:8px}.panel{padding:8px;margin:6px 0}
   #opponents{display:grid!important;grid-template-columns:1fr!important;gap:3px!important}
-  #opponents .player{display:grid!important;grid-template-columns:minmax(80px,1fr) auto minmax(115px,auto) minmax(70px,auto);align-items:center;gap:5px;padding:4px 6px}
+  #opponents .player{display:grid!important;grid-template-columns:minmax(78px,1fr) auto minmax(110px,auto) minmax(68px,auto);align-items:center;gap:5px;padding:4px 6px}
   #opponents .cards{gap:1px;flex-wrap:nowrap;justify-content:flex-end}
   #opponents .card{width:21px;height:29px;padding:1px;border-width:1px}
   #opponents .rank,#opponents .suit{font-size:8px}
@@ -38,7 +42,11 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Clean multiplayer test v21</div>
+<div class="small">Firebase multiplayer v22</div>
+<div class="topActions">
+  <button id="helpBtn" class="btn" type="button">How to Play</button>
+  <button id="leaderBtn" class="btn" type="button">Leaderboard</button>
+</div>
 
 <div id="home" class="panel">
   <div class="row">
@@ -62,7 +70,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}
 
 <div id="setup" class="panel hidden">
   <div style="font-weight:800">Choose your face-up cards</div>
-  <div class="small">Tap a card in your hand, then tap a face-up card to swap.</div>
+  <div class="small">Tap a card in your hand, then a face-up card to swap.</div>
   <div class="small" style="margin-top:10px">FACE UP</div>
   <div id="setupFace" class="cards" style="margin:5px 0 12px"></div>
   <div class="small">HAND</div>
@@ -87,17 +95,45 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}
 </div>
 </div>
 
+<div id="helpModal" class="modalBack">
+  <div class="modal">
+    <button id="helpClose" class="btn" type="button" style="float:right">Close</button>
+    <h2>How to Play</h2>
+    <h3>Using the interface</h3>
+    <ol>
+      <li>Enter a username. One player hosts and shares the room code; everyone else joins with that code.</li>
+      <li>The host taps Deal Cards after everyone is in the lobby.</li>
+      <li>During setup, tap one card in your hand and then one face-up card to swap them. Tap Ready when finished.</li>
+      <li>On your turn, tap one card or multiple cards of the same rank, then tap Play.</li>
+      <li>If you cannot or do not want to play, tap Pick Up.</li>
+      <li>When your hand is empty and the draw pile is gone, play face-up cards. Then tap face-down cards blindly.</li>
+    </ol>
+    <h3>Rules</h3>
+    <p>Normal play is the same rank or higher. A 2 resets the count. A 4 is transparent. A 7 makes the next player play 7 or lower. An 8 skips. A 10 clears the pile and cannot be played on a 7. A Joker reverses direction. Four matching ranks in a row clears the pile; transparent 4s do not interrupt the sequence.</p>
+    <p>While the draw pile remains, draw back up to 3 cards after your turn. The last player still holding cards is the Shithead.</p>
+  </div>
+</div>
+
+<div id="leaderModal" class="modalBack">
+  <div class="modal">
+    <button id="leaderClose" class="btn" type="button" style="float:right">Close</button>
+    <h2>Multiplayer Leaderboard</h2>
+    <div id="leaderRows"></div>
+    <div class="small" style="margin-top:10px">A win is awarded to the first player to get rid of all cards in a multiplayer game.</div>
+  </div>
+</div>
+
 <script>
+const firebaseConfig = {"apiKey": "AIzaSyDDpDw3W4w2izXCi2a4PltZusEUtlPJ_4A", "authDomain": "shithead-game-5c332.firebaseapp.com", "databaseURL": "https://shithead-game-5c332-default-rtdb.firebaseio.com/", "projectId": "shithead-game-5c332", "storageBucket": "shithead-game-5c332.firebasestorage.app", "messagingSenderId": "1004520259081", "appId": "1:1004520259081:web:aa52509990f58b50d142d8", "measurementId": "G-53LYNRDSK0"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
 const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const suits=['♥','♦','♣','♠'];
 const val={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14,JOKER:15};
 const $=id=>document.getElementById(id);
 
-let isHost=false, peer=null, hostConn=null, roomCode='', myId='';
-let clients=new Map(); // host only: id -> DataConnection
-let lobby=[];          // [{id,name}]
-let game=null;         // host authoritative state
-let view=null;         // local player's current view
+let roomCode='', myId='', isHost=false, roomRef=null, room=null;
 let selectedSetup=null, selectedPlay=[];
 
 function setMsg(s){$('connectMsg').textContent=s}
@@ -108,103 +144,76 @@ function username(){
 }
 function cleanRoom(v){return (v||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function makeRoom(){return 'SH'+Math.random().toString(36).slice(2,7).toUpperCase()}
+function makeId(){return 'p_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36)}
 function show(id){$(id).classList.remove('hidden')}
 function hide(id){$(id).classList.add('hidden')}
 function showOnly(id){['home','lobby','setup','game'].forEach(x=>x===id?show(x):hide(x))}
-function sortCards(a){const so={'♥':0,'♦':1,'♣':2,'♠':3,'':4};return [...a].sort((x,y)=>(val[x.rank]-val[y.rank])||((so[x.suit]??9)-(so[y.suit]??9)))}
+function sortCards(a){const so={'♥':0,'♦':1,'♣':2,'♠':3,'':4};return [...(a||[])].sort((x,y)=>(val[x.rank]-val[y.rank])||((so[x.suit]??9)-(so[y.suit]??9)))}
 function cardHTML(c,o={}){
   const red=c.suit==='♥'||c.suit==='♦', text=c.rank==='JOKER'?'🃏':c.rank;
   return `<div class="card ${red?'red':''} ${o.back?'back':''} ${o.selectable?'selectable':''}" data-id="${c.id||''}"><span class="rank">${o.back?'':text}</span><span class="suit">${o.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
 }
+function normalizePlayers(obj){
+  if(!obj)return [];
+  return Array.isArray(obj)?obj.filter(Boolean):Object.values(obj);
+}
+function getPlayers(){return normalizePlayers(room?.players)}
+function me(){return getPlayers().find(p=>p.id===myId)}
+function game(){return room?.game||null}
 
-function hostGame(){
-  const name=username(); if(!name)return;
-  if(typeof Peer==='undefined'){setMsg('Multiplayer library did not load. Refresh while online.');return}
-  isHost=true; myId='host'; roomCode=makeRoom();
-  setMsg('Creating room…');
-  peer=new Peer(('shithead-'+roomCode).toLowerCase());
-
-  peer.on('open',()=>{
-    lobby=[{id:'host',name}];
-    renderLobby();
-    showOnly('lobby');
-  });
-
-  peer.on('connection',conn=>{
-    conn.on('data',m=>handleHostMessage(conn,m));
-    conn.on('close',()=>{
-      const id=[...clients].find(([,c])=>c===conn)?.[0];
-      if(id){clients.delete(id);lobby=lobby.filter(p=>p.id!==id);broadcastLobby()}
-    });
-  });
-
-  peer.on('error',e=>setMsg('Host error: '+e.type));
+function listenRoom(){
+  roomRef.on('value',snap=>{
+    const v=snap.val();
+    if(!v){setMsg('Room no longer exists.');return}
+    room=v;
+    renderRoom();
+  },err=>setMsg('Database error: '+err.message));
 }
 
-function joinGame(){
-  const name=username(); if(!name)return;
-  if(typeof Peer==='undefined'){setMsg('Multiplayer library did not load. Refresh while online.');return}
+async function hostGame(){
+  const name=username();if(!name)return;
+  roomCode=makeRoom();myId=makeId();isHost=true;
+  roomRef=db.ref('rooms/'+roomCode);
+  setMsg('Creating room…');
+  const existing=(await roomRef.once('value')).val();
+  if(existing){roomCode=makeRoom();roomRef=db.ref('rooms/'+roomCode)}
+  await roomRef.set({
+    hostId:myId,
+    phase:'lobby',
+    createdAt:firebase.database.ServerValue.TIMESTAMP,
+    players:{[myId]:{id:myId,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP}}
+  });
+  listenRoom();setMsg('');
+}
+
+async function joinGame(){
+  const name=username();if(!name)return;
   roomCode=cleanRoom($('roomInput').value);$('roomInput').value=roomCode;
   if(!roomCode){setMsg('Enter the room code.');return}
-
-  setMsg('Connecting…');
-  peer=new Peer();
-  peer.on('open',()=>{
-    hostConn=peer.connect(('shithead-'+roomCode).toLowerCase(),{reliable:true,serialization:'json'});
-    hostConn.on('open',()=>{
-      setMsg('Connected. Joining lobby…');
-      hostConn.send({type:'join',name});
-    });
-    hostConn.on('data',handleClientMessage);
-    hostConn.on('close',()=>setMsg('Host disconnected.'));
-    hostConn.on('error',()=>setMsg('Room connection failed.'));
-  });
-  peer.on('error',e=>{
-    if(e.type==='peer-unavailable')setMsg('No open room matches that code.');
-    else setMsg('Join error: '+e.type);
-  });
+  roomRef=db.ref('rooms/'+roomCode);
+  setMsg('Joining room…');
+  const snap=await roomRef.once('value');
+  if(!snap.exists()){setMsg('No room matches that code.');return}
+  const data=snap.val();
+  if(data.phase!=='lobby'){setMsg('That game has already started.');return}
+  myId=makeId();isHost=false;
+  await roomRef.child('players/'+myId).set({id:myId,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP});
+  listenRoom();setMsg('');
 }
 
-function handleHostMessage(conn,m){
-  if(m.type==='join'){
-    const id='p'+Math.random().toString(36).slice(2,9);
-    clients.set(id,conn);
-    lobby.push({id,name:(m.name||'Player').slice(0,18)});
-    conn.send({type:'joined',id,roomCode,lobby});
-    broadcastLobby();
-    return;
-  }
-  const id=m.id;
-  if(m.type==='swap')doSwap(id,m.a,m.b);
-  else if(m.type==='ready')doReady(id);
-  else if(m.type==='play')doPlayHost(id,m.cards);
-  else if(m.type==='pickup')doPickupHost(id);
-  else if(m.type==='down')doDownHost(id,m.card);
-}
-
-function handleClientMessage(m){
-  if(m.type==='joined'){
-    myId=m.id;lobby=m.lobby;renderLobby();showOnly('lobby');setMsg('');
-  } else if(m.type==='lobby'){
-    lobby=m.lobby;renderLobby();
-  } else if(m.type==='view'){
-    view=m.view;renderFromView();
-  }
-}
-
-function send(m){
-  if(hostConn?.open)hostConn.send(m);
-  else setMsg('Connection to host is not open.');
-}
-function broadcastLobby(){
-  const msg={type:'lobby',lobby};
-  clients.forEach(c=>c.open&&c.send(msg));
-  renderLobby();
-}
-function renderLobby(){
+function renderRoom(){
+  if(!room)return;
   $('roomCode').textContent=roomCode;
-  $('lobbyPlayers').innerHTML=lobby.map(p=>`<div class="player"><strong>${p.name}</strong>${p.id==='host'?' (host)':''}</div>`).join('');
-  if(isHost){$('dealBtn').classList.remove('hidden');$('dealBtn').disabled=lobby.length<2}
+  if(room.phase==='lobby'){showOnly('lobby');renderLobby()}
+  else if(room.phase==='setup'){showOnly('setup');renderSetup()}
+  else {showOnly('game');renderGame()}
+}
+
+function renderLobby(){
+  const players=getPlayers();
+  $('lobbyPlayers').innerHTML=players.map(p=>`<div class="player"><strong>${p.name}</strong>${p.id===room.hostId?' (host)':''}</div>`).join('');
+  $('dealBtn').classList.toggle('hidden',!isHost);
+  $('dealBtn').disabled=!isHost||players.length<2;
 }
 
 function makeDeck(n){
@@ -217,194 +226,240 @@ function makeDeck(n){
   return d;
 }
 
-function deal(){
-  if(!isHost||lobby.length<2)return;
-  const deck=makeDeck(lobby.length);
-  const players=lobby.map(p=>({id:p.id,name:p.name,hand:[],face:[],down:[],ready:false,finished:false}));
-  for(let r=0;r<3;r++)for(const p of players)p.down.push(deck.pop());
-  for(let r=0;r<3;r++)for(const p of players)p.face.push(deck.pop());
-  for(let r=0;r<3;r++)for(const p of players)p.hand.push(deck.pop());
-  players.forEach(p=>{p.hand=sortCards(p.hand);p.face=sortCards(p.face)});
-  game={players,draw:deck,pile:[],current:null,direction:1,phase:'setup',mustLow:false,message:'Swap cards, then tap Ready.',winnerOrder:[]};
-  pushViews();
-}
-
-function viewFor(id){
-  const me=game.players.find(p=>p.id===id);
-  return {
-    phase:game.phase,current:game.current,direction:game.direction,message:game.message,
-    drawCount:game.draw.length,pile:game.pile,mustLow:game.mustLow,
-    me:{id:me.id,name:me.name,hand:sortCards(me.hand),face:sortCards(me.face),down:me.down.map(c=>({id:c.id})),ready:me.ready,finished:me.finished},
-    players:game.players.map((p,i)=>({id:p.id,name:p.name,index:i,handCount:p.hand.length,face:p.face,downCount:p.down.length,ready:p.ready,finished:p.finished}))
-  };
-}
-function pushViews(){
-  view=viewFor('host');renderFromView();
-  clients.forEach((c,id)=>{if(c.open)c.send({type:'view',view:viewFor(id)})});
-}
-
-function renderFromView(){
-  if(!view)return;
-  if(view.phase==='setup'){showOnly('setup');renderSetup()}
-  else {showOnly('game');renderGame()}
+async function deal(){
+  if(!isHost)return;
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='lobby')return cur;
+    const players=normalizePlayers(cur.players);
+    if(players.length<2)return cur;
+    const deck=makeDeck(players.length);
+    const ps=players.map(p=>({id:p.id,name:p.name,hand:[],face:[],down:[],ready:false,finished:false}));
+    for(let r=0;r<3;r++)for(const p of ps)p.down.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.face.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.hand.push(deck.pop());
+    ps.forEach(p=>{p.hand=sortCards(p.hand);p.face=sortCards(p.face)});
+    cur.players=Object.fromEntries(ps.map(p=>[p.id,p]));
+    cur.game={draw:deck,pile:[],current:null,direction:1,mustLow:false,message:'Swap cards, then tap Ready.',winnerOrder:[],winnerRecorded:false};
+    cur.phase='setup';
+    return cur;
+  });
 }
 
 function renderSetup(){
-  $('setupFace').innerHTML=view.me.face.map(c=>cardHTML(c,{selectable:!view.me.ready})).join('');
-  $('setupHand').innerHTML=view.me.hand.map(c=>cardHTML(c,{selectable:!view.me.ready})).join('');
-  $('readyBtn').disabled=view.me.ready;
-  $('readyBtn').textContent=view.me.ready?'Ready ✓':'Ready';
-  $('setupMsg').textContent=view.me.ready?'Waiting for everyone…':(selectedSetup?'Now tap a card in the other row.':'');
+  const p=me();if(!p)return;
+  $('setupFace').innerHTML=sortCards(p.face).map(c=>cardHTML(c,{selectable:!p.ready})).join('');
+  $('setupHand').innerHTML=sortCards(p.hand).map(c=>cardHTML(c,{selectable:!p.ready})).join('');
+  $('readyBtn').disabled=!!p.ready;$('readyBtn').textContent=p.ready?'Ready ✓':'Ready';
+  $('setupMsg').textContent=p.ready?'Waiting for everyone…':(selectedSetup?'Now tap a card in the other row.':'');
   document.querySelectorAll('#setup .card').forEach(el=>{
     el.onclick=()=>setupTap(el.dataset.id);
     el.classList.toggle('selected',selectedSetup?.id===el.dataset.id);
   });
 }
+
 function setupTap(id){
-  if(view.me.ready)return;
-  const zone=view.me.hand.some(c=>c.id===id)?'hand':view.me.face.some(c=>c.id===id)?'face':null;
+  const p=me();if(!p||p.ready)return;
+  const hand=sortCards(p.hand),face=sortCards(p.face);
+  const zone=hand.some(c=>c.id===id)?'hand':face.some(c=>c.id===id)?'face':null;
   if(!zone)return;
   if(!selectedSetup){selectedSetup={id,zone};renderSetup();return}
   if(selectedSetup.id===id){selectedSetup=null;renderSetup();return}
   if(selectedSetup.zone===zone){selectedSetup={id,zone};renderSetup();return}
   const a=selectedSetup.id,b=id;selectedSetup=null;
-  if(isHost)doSwap('host',a,b);else send({type:'swap',id:myId,a,b});
-}
-function doSwap(id,a,b){
-  if(!game||game.phase!=='setup')return;
-  const p=game.players.find(x=>x.id===id);if(!p||p.ready)return;
-  const ah=p.hand.findIndex(c=>c.id===a),af=p.face.findIndex(c=>c.id===a),bh=p.hand.findIndex(c=>c.id===b),bf=p.face.findIndex(c=>c.id===b);
-  if(ah>=0&&bf>=0)[p.hand[ah],p.face[bf]]=[p.face[bf],p.hand[ah]];
-  else if(af>=0&&bh>=0)[p.face[af],p.hand[bh]]=[p.hand[bh],p.face[af]];
-  else return;
-  p.hand=sortCards(p.hand);p.face=sortCards(p.face);pushViews();
-}
-function doReady(id){
-  const p=game?.players.find(x=>x.id===id);if(!p||game.phase!=='setup')return;
-  p.ready=true;
-  if(game.players.every(x=>x.ready))startPlay();else pushViews();
-}
-function startPlay(){
-  game.phase='play';
-  let candidates=[];
-  game.players.forEach((p,i)=>p.hand.forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))candidates.push(i)}));
-  if(candidates.length)game.current=candidates[Math.floor(Math.random()*candidates.length)];
-  else{
-    let best={v:99,i:0};game.players.forEach((p,i)=>p.hand.forEach(c=>{const x=val[c.rank]??15;if(x<best.v)best={v:x,i}}));game.current=best.i;
-  }
-  game.message=`${game.players[game.current].name} goes first.`;
-  pushViews();
+  doSwap(a,b);
 }
 
-function meaningfulTop(){for(let i=game.pile.length-1;i>=0;i--)if(game.pile[i].rank!=='4')return game.pile[i];return null}
+async function doSwap(a,b){
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='setup')return cur;
+    const p=cur.players?.[myId];if(!p||p.ready)return cur;
+    p.hand=p.hand||[];p.face=p.face||[];
+    const ah=p.hand.findIndex(c=>c.id===a),af=p.face.findIndex(c=>c.id===a),bh=p.hand.findIndex(c=>c.id===b),bf=p.face.findIndex(c=>c.id===b);
+    if(ah>=0&&bf>=0)[p.hand[ah],p.face[bf]]=[p.face[bf],p.hand[ah]];
+    else if(af>=0&&bh>=0)[p.face[af],p.hand[bh]]=[p.hand[bh],p.face[af]];
+    else return cur;
+    p.hand=sortCards(p.hand);p.face=sortCards(p.face);
+    return cur;
+  });
+}
+
+async function ready(){
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='setup')return cur;
+    if(cur.players?.[myId])cur.players[myId].ready=true;
+    const players=normalizePlayers(cur.players);
+    if(players.length&&players.every(p=>p.ready)){
+      cur.phase='play';
+      let candidates=[];
+      players.forEach((p,i)=>(p.hand||[]).forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))candidates.push(i)}));
+      let current;
+      if(candidates.length)current=candidates[Math.floor(Math.random()*candidates.length)];
+      else{
+        let best={v:99,i:0};
+        players.forEach((p,i)=>(p.hand||[]).forEach(c=>{const x=val[c.rank]??15;if(x<best.v)best={v:x,i}}));
+        current=best.i;
+      }
+      cur.game.current=current;
+      cur.game.message=`${players[current].name} goes first.`;
+    }
+    return cur;
+  });
+}
+
+function meaningfulTop(g){for(let i=(g.pile||[]).length-1;i>=0;i--)if(g.pile[i].rank!=='4')return g.pile[i];return null}
 function magic(c){return ['2','4','10','JOKER'].includes(c.rank)}
-function legal(c){
-  const top=meaningfulTop();if(!top)return true;
+function legal(c,g){
+  const top=meaningfulTop(g);if(!top)return true;
   if(c.rank==='10'&&top.rank==='7')return false;
   if(magic(c))return true;
-  if(game.mustLow)return val[c.rank]<=7;
+  if(g.mustLow)return val[c.rank]<=7;
   return val[c.rank]>=val[top.rank];
 }
-function activeZone(p){if(p.hand.length)return'hand';if(game.draw.length)return'hand';if(p.face.length)return'face';return'down'}
-function consecutive(rank){let n=0;for(let i=game.pile.length-1;i>=0;i--){const c=game.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
-function drawUp(p){while(game.draw.length&&p.hand.length<3)p.hand.push(game.draw.pop());p.hand=sortCards(p.hand)}
-function advance(n){for(let x=0;x<n;x++){do{game.current=(game.current+game.direction+game.players.length)%game.players.length}while(game.players[game.current].finished)}}
-function checkFinish(i){
-  const p=game.players[i];
-  if(!game.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;game.winnerOrder.push(i);game.message+=` ${p.name} is out!`}
-  const active=game.players.filter(x=>!x.finished);
-  if(active.length<=1){game.phase='done';game.message=`${active[0]?.name||'Nobody'} is the SHITHEAD.`;return true}
-  return false;
+function activeZone(p,g){if((p.hand||[]).length)return'hand';if((g.draw||[]).length)return'hand';if((p.face||[]).length)return'face';return'down'}
+function consecutive(rank,g){let n=0;for(let i=(g.pile||[]).length-1;i>=0;i--){const c=g.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
+function drawUp(p,g){p.hand=p.hand||[];g.draw=g.draw||[];while(g.draw.length&&p.hand.length<3)p.hand.push(g.draw.pop());p.hand=sortCards(p.hand)}
+function activePlayers(players){return players.filter(p=>!p.finished)}
+function advance(g,players,n){
+  for(let x=0;x<n;x++){let guard=0;do{g.current=(g.current+g.direction+players.length)%players.length;guard++}while(players[g.current].finished&&guard<=players.length)}
 }
-
-function doPlayHost(id,ids){
-  if(game.phase!=='play')return;
-  const i=game.players.findIndex(p=>p.id===id);if(i!==game.current)return;
-  const p=game.players[i],z=activeZone(p);if(z==='down')return;
-  const pool=p[z], cards=ids.map(cid=>pool.find(c=>c.id===cid)).filter(Boolean);
-  if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0]))return;
-  const rank=cards[0].rank;
-  cards.forEach(c=>{pool.splice(pool.findIndex(x=>x.id===c.id),1);game.pile.push(c)});
-  if(rank==='JOKER')for(let k=0;k<cards.length;k++)game.direction*=-1;
-  if(rank==='8'){
-    game.mustLow=false;drawUp(p);game.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8.`;checkFinish(i);if(game.phase==='play')advance(cards.length+1);pushViews();return;
+function finishCheck(cur,players,i){
+  const p=players[i],g=cur.game;
+  if(!(g.draw||[]).length&&!(p.hand||[]).length&&!(p.face||[]).length&&!(p.down||[]).length&&!p.finished){
+    p.finished=true;g.winnerOrder=g.winnerOrder||[];g.winnerOrder.push(p.id);g.message+=` ${p.name} is out!`;
+    if(!g.winnerRecorded){
+      g.winnerRecorded=true;g.winnerName=p.name;
+    }
   }
-  let clear=rank==='10', same=rank==='10';
-  if(rank==='2')game.mustLow=false;else if(rank==='7')game.mustLow=true;else if(rank==='4'){}else game.mustLow=false;
-  if(rank!=='4'&&consecutive(rank)>=4){clear=true;same=true}
-  if(clear){game.pile=[];game.mustLow=false;game.message=`${p.name} cleared the pile and plays again.`}
-  else game.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
-  drawUp(p);checkFinish(i);if(game.phase==='play'&&!same)advance(1);pushViews();
+  const active=activePlayers(players);
+  if(active.length<=1){cur.phase='done';g.message=`${active[0]?.name||'Nobody'} is the SHITHEAD.`}
 }
-function doPickupHost(id){
-  const i=game.players.findIndex(p=>p.id===id);if(game.phase!=='play'||i!==game.current||!game.pile.length)return;
-  const p=game.players[i];p.hand.push(...game.pile);p.hand=sortCards(p.hand);game.pile=[];game.mustLow=false;game.message=`${p.name} picked up the pile.`;advance(1);pushViews();
-}
-function doDownHost(id,cid){
-  const i=game.players.findIndex(p=>p.id===id);if(game.phase!=='play'||i!==game.current)return;
-  const p=game.players[i];if(activeZone(p)!=='down')return;
-  const ix=p.down.findIndex(c=>c.id===cid);if(ix<0)return;
-  const c=p.down.splice(ix,1)[0];
-  if(!legal(c)){game.pile.push(c);p.hand.push(...game.pile);p.hand=sortCards(p.hand);game.pile=[];game.mustLow=false;game.message=`${p.name} flipped ${c.rank} and picked up.`;advance(1);pushViews();return}
-  game.pile.push(c);
-  const rank=c.rank;if(rank==='JOKER')game.direction*=-1;
-  if(rank==='8'){game.mustLow=false;game.message=`${p.name} flipped an 8.`;checkFinish(i);if(game.phase==='play')advance(2);pushViews();return}
-  let clear=rank==='10',same=rank==='10';
-  if(rank==='2')game.mustLow=false;else if(rank==='7')game.mustLow=true;else if(rank==='4'){}else game.mustLow=false;
-  if(rank!=='4'&&consecutive(rank)>=4){clear=true;same=true}
-  if(clear){game.pile=[];game.mustLow=false;game.message=`${p.name} cleared the pile and plays again.`} else game.message=`${p.name} flipped ${rank}.`;
-  checkFinish(i);if(game.phase==='play'&&!same)advance(1);pushViews();
+async function recordWinnerIfNeeded(){
+  if(!room?.game?.winnerRecorded||!room.game.winnerName||room.game.leaderboardSaved)return;
+  if(!isHost)return;
+  const name=room.game.winnerName;
+  const safe=name.toLowerCase().replace(/[.#$/\[\]]/g,'_');
+  const winRef=db.ref('leaderboard/'+safe);
+  await winRef.transaction(cur=>({name,wins:(cur?.wins||0)+1}));
+  await roomRef.child('game/leaderboardSaved').set(true);
 }
 
 function renderGame(){
-  const meIndex=view.players.find(p=>p.id===view.me.id).index;
-  $('opponents').innerHTML=view.players.filter(p=>p.id!==view.me.id).map(p=>{
-    const total=p.handCount+p.face.length+p.downCount;
-    return `<div class="player ${view.current===p.index?'active':''} ${p.finished?'finished':''}">
-      <div class="name">${p.name}${p.finished?' ✓':''}</div>
+  recordWinnerIfNeeded().catch(()=>{});
+  const players=getPlayers(),p=me(),g=game();if(!p||!g)return;
+  const meIndex=players.findIndex(x=>x.id===myId);
+  $('opponents').innerHTML=players.filter(x=>x.id!==myId).map((x)=>{
+    const total=(x.hand||[]).length+(x.face||[]).length+(x.down||[]).length;
+    const idx=players.findIndex(q=>q.id===x.id);
+    return `<div class="player ${g.current===idx?'active':''} ${x.finished?'finished':''}">
+      <div class="name">${x.name}${x.finished?' ✓':''}</div>
       <div><strong>${total}</strong> cards</div>
-      <div class="small">H ${p.handCount} · U ${p.face.length} · D ${p.downCount}</div>
-      <div class="cards">${p.face.map(c=>cardHTML(c)).join('')}</div>
+      <div class="small">H ${(x.hand||[]).length} · U ${(x.face||[]).length} · D ${(x.down||[]).length}</div>
+      <div class="cards">${sortCards(x.face||[]).map(c=>cardHTML(c)).join('')}</div>
     </div>`;
   }).join('');
-  $('drawCount').textContent=view.drawCount;$('direction').textContent=view.direction===1?'↻':'↺';$('pileCount').textContent=`Pile ${view.pile.length}`;
-  const top=view.pile[view.pile.length-1];$('topCard').innerHTML=top?cardHTML(top):'<div class="small">Empty</div>';
-  $('status').textContent=view.message+(view.phase==='play'&&view.current===meIndex?' Your turn.':'');
-  const zone=view.me.hand.length?'hand':(view.drawCount?'hand':(view.me.face.length?'face':'down'));
-  $('yourFace').innerHTML=view.me.face.map(c=>cardHTML(c,{selectable:zone==='face'&&view.current===meIndex})).join('');
-  $('yourDown').innerHTML=view.me.down.map(c=>cardHTML(c,{back:true,selectable:zone==='down'&&view.current===meIndex})).join('');
-  $('yourHand').innerHTML=view.me.hand.map(c=>cardHTML(c,{selectable:zone==='hand'&&view.current===meIndex})).join('');
-  document.querySelectorAll('#yourHand .card,#yourFace .card').forEach(el=>{
-    el.onclick=()=>togglePlay(el.dataset.id);el.classList.toggle('selected',selectedPlay.includes(el.dataset.id));
-  });
+  $('drawCount').textContent=(g.draw||[]).length;$('direction').textContent=g.direction===1?'↻':'↺';$('pileCount').textContent=`Pile ${(g.pile||[]).length}`;
+  const top=(g.pile||[])[(g.pile||[]).length-1];$('topCard').innerHTML=top?cardHTML(top):'<div class="small">Empty</div>';
+  $('status').textContent=g.message+(room.phase==='play'&&g.current===meIndex?' Your turn.':'');
+  const zone=activeZone(p,g);
+  $('yourFace').innerHTML=sortCards(p.face||[]).map(c=>cardHTML(c,{selectable:zone==='face'&&g.current===meIndex})).join('');
+  $('yourDown').innerHTML=(p.down||[]).map(c=>cardHTML(c,{back:true,selectable:zone==='down'&&g.current===meIndex})).join('');
+  $('yourHand').innerHTML=sortCards(p.hand||[]).map(c=>cardHTML(c,{selectable:zone==='hand'&&g.current===meIndex})).join('');
+  document.querySelectorAll('#yourHand .card,#yourFace .card').forEach(el=>{el.onclick=()=>togglePlay(el.dataset.id);el.classList.toggle('selected',selectedPlay.includes(el.dataset.id))});
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>playDown(el.dataset.id));
-  $('playBtn').disabled=view.phase!=='play'||view.current!==meIndex||zone==='down'||!selectedPlay.length;
-  $('pickupBtn').disabled=view.phase!=='play'||view.current!==meIndex||!view.pile.length;
+  $('playBtn').disabled=room.phase!=='play'||g.current!==meIndex||zone==='down'||!selectedPlay.length;
+  $('pickupBtn').disabled=room.phase!=='play'||g.current!==meIndex||!(g.pile||[]).length;
 }
 function togglePlay(id){
-  const all=[...view.me.hand,...view.me.face],c=all.find(x=>x.id===id);if(!c)return;
+  const p=me(),all=[...(p.hand||[]),...(p.face||[])],c=all.find(x=>x.id===id);if(!c)return;
   if(selectedPlay.length){const f=all.find(x=>x.id===selectedPlay[0]);if(f&&f.rank!==c.rank)selectedPlay=[]}
   selectedPlay=selectedPlay.includes(id)?selectedPlay.filter(x=>x!==id):[...selectedPlay,id];renderGame();
 }
-function playSelected(){
+
+async function playSelected(){
   const ids=[...selectedPlay];selectedPlay=[];
-  if(isHost)doPlayHost('host',ids);else send({type:'play',id:myId,cards:ids});
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='play')return cur;
+    const players=normalizePlayers(cur.players),g=cur.game;
+    const i=players.findIndex(p=>p.id===myId);if(i!==g.current)return cur;
+    const p=players[i],z=activeZone(p,g);if(z==='down')return cur;
+    p[z]=p[z]||[];
+    const cards=ids.map(cid=>p[z].find(c=>c.id===cid)).filter(Boolean);
+    if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0],g))return cur;
+    g.pile=g.pile||[];
+    const rank=cards[0].rank;
+    cards.forEach(c=>{p[z].splice(p[z].findIndex(x=>x.id===c.id),1);g.pile.push(c)});
+    if(rank==='JOKER')for(let k=0;k<cards.length;k++)g.direction*=-1;
+    if(rank==='8'){
+      g.mustLow=false;drawUp(p,g);g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8.`;finishCheck(cur,players,i);if(cur.phase==='play')advance(g,players,cards.length+1);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+    }
+    let clear=rank==='10',same=rank==='10';
+    if(rank==='2')g.mustLow=false;else if(rank==='7')g.mustLow=true;else if(rank==='4'){}else g.mustLow=false;
+    if(rank!=='4'&&consecutive(rank,g)>=4){clear=true;same=true}
+    if(clear){g.pile=[];g.mustLow=false;g.message=`${p.name} cleared the pile and plays again.`}
+    else g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
+    drawUp(p,g);p.hand=sortCards(p.hand||[]);p.face=sortCards(p.face||[]);finishCheck(cur,players,i);if(cur.phase==='play'&&!same)advance(g,players,1);
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+  });
 }
-function pickup(){
-  if(isHost)doPickupHost('host');else send({type:'pickup',id:myId});
+
+async function pickup(){
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='play')return cur;
+    const players=normalizePlayers(cur.players),g=cur.game;
+    const i=players.findIndex(p=>p.id===myId);if(i!==g.current||!(g.pile||[]).length)return cur;
+    const p=players[i];p.hand=p.hand||[];p.hand.push(...g.pile);p.hand=sortCards(p.hand);g.pile=[];g.mustLow=false;g.message=`${p.name} picked up the pile.`;advance(g,players,1);
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+  });
 }
-function playDown(id){
-  if(isHost)doDownHost('host',id);else send({type:'down',id:myId,card:id});
+
+async function playDown(id){
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='play')return cur;
+    const players=normalizePlayers(cur.players),g=cur.game;
+    const i=players.findIndex(p=>p.id===myId);if(i!==g.current)return cur;
+    const p=players[i];if(activeZone(p,g)!=='down')return cur;
+    p.down=p.down||[];const ix=p.down.findIndex(c=>c.id===id);if(ix<0)return cur;
+    const c=p.down.splice(ix,1)[0];g.pile=g.pile||[];
+    if(!legal(c,g)){g.pile.push(c);p.hand=p.hand||[];p.hand.push(...g.pile);p.hand=sortCards(p.hand);g.pile=[];g.mustLow=false;g.message=`${p.name} flipped ${c.rank} and picked up.`;advance(g,players,1)}
+    else{
+      g.pile.push(c);const rank=c.rank;if(rank==='JOKER')g.direction*=-1;
+      if(rank==='8'){g.mustLow=false;g.message=`${p.name} flipped an 8.`;finishCheck(cur,players,i);if(cur.phase==='play')advance(g,players,2)}
+      else{
+        let clear=rank==='10',same=rank==='10';
+        if(rank==='2')g.mustLow=false;else if(rank==='7')g.mustLow=true;else if(rank==='4'){}else g.mustLow=false;
+        if(rank!=='4'&&consecutive(rank,g)>=4){clear=true;same=true}
+        if(clear){g.pile=[];g.mustLow=false;g.message=`${p.name} cleared the pile and plays again.`}else g.message=`${p.name} flipped ${rank}.`;
+        finishCheck(cur,players,i);if(cur.phase==='play'&&!same)advance(g,players,1);
+      }
+    }
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+  });
+}
+
+async function showLeaderboard(){
+  $('leaderRows').innerHTML='<div class="small">Loading…</div>';
+  $('leaderModal').classList.add('open');
+  const snap=await db.ref('leaderboard').once('value');
+  const data=snap.val()||{};
+  const rows=Object.values(data).sort((a,b)=>(b.wins||0)-(a.wins||0));
+  $('leaderRows').innerHTML=rows.length?rows.map((r,i)=>`<div class="leaderRow"><span>${i+1}. ${r.name}</span><strong>${r.wins} win${r.wins===1?'':'s'}</strong></div>`).join(''):'<p>No multiplayer wins yet.</p>';
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  $('hostBtn').addEventListener('click',hostGame);
-  $('joinBtn').addEventListener('click',joinGame);
-  $('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame()});
-  $('dealBtn').addEventListener('click',deal);
-  $('readyBtn').addEventListener('click',()=>{if(isHost)doReady('host');else send({type:'ready',id:myId})});
-  $('playBtn').addEventListener('click',playSelected);
-  $('pickupBtn').addEventListener('click',pickup);
+  $('hostBtn').onclick=()=>hostGame().catch(e=>setMsg(e.message));
+  $('joinBtn').onclick=()=>joinGame().catch(e=>setMsg(e.message));
+  $('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame().catch(err=>setMsg(err.message))});
+  $('dealBtn').onclick=()=>deal().catch(e=>setMsg(e.message));
+  $('readyBtn').onclick=()=>ready().catch(e=>setMsg(e.message));
+  $('playBtn').onclick=()=>playSelected().catch(e=>setMsg(e.message));
+  $('pickupBtn').onclick=()=>pickup().catch(e=>setMsg(e.message));
+  $('helpBtn').onclick=()=>$('helpModal').classList.add('open');
+  $('helpClose').onclick=()=>$('helpModal').classList.remove('open');
+  $('helpModal').onclick=e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('open')};
+  $('leaderBtn').onclick=()=>showLeaderboard().catch(e=>{$('leaderRows').textContent=e.message;$('leaderModal').classList.add('open')});
+  $('leaderClose').onclick=()=>$('leaderModal').classList.remove('open');
+  $('leaderModal').onclick=e=>{if(e.target===$('leaderModal'))$('leaderModal').classList.remove('open')};
 });
 </script>
 </body>

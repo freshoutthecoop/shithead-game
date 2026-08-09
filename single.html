@@ -82,12 +82,22 @@ function cardHTML(c,opts={}){
   const red=c.suit==='♥'||c.suit==='♦', txt=c.rank==='JOKER'?'🃏':c.rank;
   return `<div class="card ${red?'red':''} ${opts.back?'back':''} ${opts.cls||''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':txt}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
 }
+function sortCards(cards){
+  const suitOrder={'♥':0,'♦':1,'♣':2,'♠':3,'':4};
+  return [...cards].sort((a,b)=>(value[a.rank]-value[b.rank]) || ((suitOrder[a.suit]??9)-(suitOrder[b.suit]??9)));
+}
+function sortPlayerCards(p){
+  p.hand=sortCards(p.hand);
+  p.face=sortCards(p.face);
+}
+
 function deal(n){
   const deck=makeDeck(n), players=[];
   for(let i=0;i<n;i++) players.push({name:i===0?'You':`Computer ${i}`,hand:[],face:[],down:[],finished:false});
   for(let r=0;r<3;r++) for(const p of players) p.down.push(deck.pop());
   for(let r=0;r<3;r++) for(const p of players) p.face.push(deck.pop());
   for(let r=0;r<3;r++) for(const p of players) p.hand.push(deck.pop());
+  players.forEach(sortPlayerCards);
   G={players,draw:deck,pile:[],current:0,direction:1,phase:'setup',winnerOrder:[],message:'',mustLow:false};
   aiSetup(); renderSetup();
 }
@@ -95,12 +105,12 @@ function scoreCard(c){
   if(c.rank==='2')return 100;if(c.rank==='10')return 98;if(c.rank==='JOKER')return 94;if(c.rank==='4')return 90;if(c.rank==='8')return 82;if(c.rank==='7')return 70;return value[c.rank];
 }
 function aiSetup(){
-  for(let i=1;i<G.players.length;i++){const p=G.players[i], all=[...p.hand,...p.face].sort((a,b)=>scoreCard(b)-scoreCard(a));p.face=all.slice(0,3);p.hand=all.slice(3);}
+  for(let i=1;i<G.players.length;i++){const p=G.players[i], all=[...p.hand,...p.face].sort((a,b)=>scoreCard(b)-scoreCard(a));p.face=sortCards(all.slice(0,3));p.hand=sortCards(all.slice(3));}
 }
 function renderSetup(){
   $('start').classList.add('hidden');$('setup').classList.remove('hidden');
-  $('setupFace').innerHTML=G.players[0].face.map(c=>cardHTML(c,{cls:'selectable'})).join('');
-  $('setupHand').innerHTML=G.players[0].hand.map(c=>cardHTML(c,{cls:'selectable'})).join('');
+  $('setupFace').innerHTML=sortCards(G.players[0].face).map(c=>cardHTML(c,{cls:'selectable'})).join('');
+  $('setupHand').innerHTML=sortCards(G.players[0].hand).map(c=>cardHTML(c,{cls:'selectable'})).join('');
   document.querySelectorAll('#setup .card').forEach(el=>el.onclick=()=>setupTap(el.dataset.id));
 }
 function setupTap(id){
@@ -109,6 +119,7 @@ function setupTap(id){
   if(zone===selectedSetup.zone){selectedSetup={id,zone};highlightSetup();return}
   const a=selectedSetup.zone==='hand'?p.hand:p.face,b=zone==='hand'?p.hand:p.face;
   const ai=a.findIndex(c=>c.id===selectedSetup.id),bi=b.findIndex(c=>c.id===id);[a[ai],b[bi]]=[b[bi],a[ai]];
+  sortPlayerCards(p);
   selectedSetup=null;$('setupNote').textContent='';renderSetup();
 }
 function highlightSetup(){document.querySelectorAll('#setup .card').forEach(el=>el.classList.toggle('selected',el.dataset.id===selectedSetup?.id))}
@@ -129,7 +140,7 @@ function legal(c){
   if(G.mustLow)return value[c.rank]<=7;
   return value[c.rank]>=value[top.rank];
 }
-function drawUp(p){while(G.draw.length&&p.hand.length<3)p.hand.push(G.draw.pop())}
+function drawUp(p){while(G.draw.length&&p.hand.length<3)p.hand.push(G.draw.pop());p.hand=sortCards(p.hand)}
 function checkFinish(i){const p=G.players[i];if(!G.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;G.winnerOrder.push(i);G.message+=` ${p.name} is out!`}}
 function activeCount(){return G.players.filter(p=>!p.finished).length}
 function advance(steps){for(let s=0;s<steps;s++){let tries=0;do{G.current=(G.current+G.direction+G.players.length)%G.players.length;tries++}while(G.players[G.current].finished&&tries<=G.players.length)}}
@@ -152,7 +163,7 @@ function playCards(i,cards){
 }
 function pickup(i){
   const p=G.players[i];if(!G.pile.length)return;
-  p.hand.push(...G.pile);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;advance(1);render();maybeAITurn();
+  p.hand.push(...G.pile);p.hand=sortCards(p.hand);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;advance(1);render();maybeAITurn();
 }
 function availableZone(p){if(p.hand.length)return 'hand';if(G.draw.length)return 'hand';if(p.face.length)return 'face';return 'down'}
 function legalGroups(p){
@@ -192,7 +203,7 @@ function render(){
   $('status').textContent=G.message+(G.phase==='play'&&G.current===0?' Your turn.':'');
   $('yourFace').innerHTML=p.face.map(c=>cardHTML(c,{cls:availableZone(p)==='face'&&G.current===0?'selectable':''})).join('');
   $('yourDown').innerHTML=p.down.map(c=>cardHTML(c,{back:true,cls:availableZone(p)==='down'&&G.current===0?'selectable':''})).join('');
-  $('yourHand').innerHTML=p.hand.map(c=>cardHTML(c,{cls:availableZone(p)==='hand'&&G.current===0?'selectable':''})).join('');
+  $('yourHand').innerHTML=sortCards(p.hand).map(c=>cardHTML(c,{cls:availableZone(p)==='hand'&&G.current===0?'selectable':''})).join('');
   document.querySelectorAll('#yourHand .card,#yourFace .card').forEach(el=>{el.onclick=()=>toggleSelect(el.dataset.id);el.classList.toggle('selected',selectedPlay.includes(el.dataset.id))});
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>humanDown(el.dataset.id));
   const z=availableZone(p);$('playBtn').disabled=G.current!==0||G.phase!=='play'||z==='down'||selectedPlay.length===0;
