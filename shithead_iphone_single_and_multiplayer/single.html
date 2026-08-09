@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Shithead</title>
+<style>
+:root{--bg:#0f5132;--panel:#0b3d28;--card:#fff;--ink:#111;--muted:#d7e6de;--accent:#ffd166;--danger:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(#0f5132,#0b3d28);color:white;min-height:100vh}
+button,select{font:inherit}.wrap{max-width:720px;margin:0 auto;padding:14px 12px 28px}
+h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;margin:10px 0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.small{font-size:13px;color:var(--muted)}
+.status{min-height:42px;font-weight:700}.players{display:grid;grid-template-columns:1fr 1fr;gap:8px}.player{background:rgba(255,255,255,.08);border-radius:12px;padding:8px}
+.active{outline:2px solid var(--accent)}.finished{opacity:.5}.oppCount{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:32px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.16);font-size:18px;font-weight:900}.oppMeta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}.cards{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end}
+.card{width:56px;height:78px;background:var(--card);color:var(--ink);border-radius:8px;border:2px solid #ddd;display:flex;flex-direction:column;justify-content:space-between;padding:5px;font-weight:800;box-shadow:0 2px 5px rgba(0,0,0,.25);user-select:none}
+.card.red{color:#c62828}.card.back{background:repeating-linear-gradient(45deg,#1d3557,#1d3557 6px,#457b9d 6px,#457b9d 12px);border-color:#d8e2ef;color:transparent}
+.card.selectable{cursor:pointer}.card.selected{transform:translateY(-9px);outline:3px solid var(--accent)}.rank{font-size:20px;line-height:1}.suit{font-size:22px;align-self:flex-end}
+.pileCard{width:72px;height:100px}.center{display:flex;justify-content:center;align-items:center;text-align:center}.pileArea{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
+.setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}
+@media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
+</style>
+
+<meta name="theme-color" content="#0f5132" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Shithead" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<style>
+html,body{overscroll-behavior:none}
+body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+</style>
+
+</head>
+<body>
+    <div style="max-width:760px;margin:0 auto;padding:10px 12px 0">
+      <a href="index.html" style="display:inline-block;text-decoration:none;background:rgba(255,255,255,.14);color:white;padding:10px 12px;border-radius:10px;font-weight:800">← Modes</a>
+    </div>
+    
+<div class="wrap">
+<h1>Shithead</h1>
+<div id="start" class="panel">
+  <div class="row between">
+    <div><div style="font-weight:800">Single player</div><div class="small">You vs computer players</div></div>
+    <label>Total players
+      <select id="playerCount"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select>
+    </label>
+  </div>
+  <div style="margin-top:12px"><button id="newGame" class="btn primary">New Game</button></div>
+</div>
+
+<div id="setup" class="panel hidden">
+  <div style="font-weight:800;margin-bottom:4px">Choose your face-up cards</div>
+  <div class="small">Tap one card in your hand, then one face-up card to swap them.</div>
+  <div class="setupGrid" style="margin-top:12px">
+    <div class="faceSection"><div class="label">YOUR FACE-UP CARDS</div><div id="setupFace" class="cards"></div></div>
+    <div class="faceSection"><div class="label">YOUR HAND</div><div id="setupHand" class="cards"></div></div>
+  </div>
+  <div class="row" style="margin-top:12px"><button id="readyBtn" class="btn primary">Ready</button><span id="setupNote" class="toast"></span></div>
+</div>
+
+<div id="game" class="hidden">
+  <div id="opponents" class="players"></div>
+  <div class="panel pileArea">
+    <div><div class="label">DRAW PILE</div><div id="drawCount" style="font-size:26px;font-weight:900">0</div></div>
+    <div class="center"><div><div id="topCard"></div><div id="pileCount" class="small"></div></div></div>
+    <div style="text-align:right"><div class="label">DIRECTION</div><div id="direction" style="font-size:24px;font-weight:900">↻</div></div>
+  </div>
+  <div class="panel">
+    <div id="status" class="status"></div>
+    <div class="label">YOUR FACE-UP CARDS</div><div id="yourFace" class="cards" style="margin:6px 0 12px"></div>
+    <div class="label">YOUR FACE-DOWN CARDS</div><div id="yourDown" class="cards" style="margin:6px 0 12px"></div>
+    <div class="label">YOUR HAND</div><div id="yourHand" class="cards" style="margin:6px 0 12px"></div>
+    <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up Pile</button></div>
+  </div>
+</div>
+</div>
+
+<script>
+const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const suits=['♥','♦','♣','♠'];
+const value={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14,JOKER:15};
+let G=null, selectedSetup=null, selectedPlay=[];
+const $=id=>document.getElementById(id);
+
+function makeDeck(nPlayers){
+  const decks=Math.ceil(nPlayers/3), d=[];
+  for(let k=0;k<decks;k++){
+    for(const s of suits) for(const r of ranks) d.push({rank:r,suit:s,id:`${k}-${s}-${r}-${Math.random()}`});
+    d.push({rank:'JOKER',suit:'',id:`${k}-J1-${Math.random()}`},{rank:'JOKER',suit:'',id:`${k}-J2-${Math.random()}`});
+  }
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
+  return d;
+}
+function cardHTML(c,opts={}){
+  const red=c.suit==='♥'||c.suit==='♦', txt=c.rank==='JOKER'?'🃏':c.rank;
+  return `<div class="card ${red?'red':''} ${opts.back?'back':''} ${opts.cls||''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':txt}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
+}
+function sortCards(cards){
+  const suitOrder={'♥':0,'♦':1,'♣':2,'♠':3,'':4};
+  return [...cards].sort((a,b)=>(value[a.rank]-value[b.rank]) || ((suitOrder[a.suit]??9)-(suitOrder[b.suit]??9)));
+}
+function sortPlayerCards(p){
+  p.hand=sortCards(p.hand);
+  p.face=sortCards(p.face);
+}
+
+function deal(n){
+  const deck=makeDeck(n), players=[];
+  for(let i=0;i<n;i++) players.push({name:i===0?'You':`Computer ${i}`,hand:[],face:[],down:[],finished:false});
+  for(let r=0;r<3;r++) for(const p of players) p.down.push(deck.pop());
+  for(let r=0;r<3;r++) for(const p of players) p.face.push(deck.pop());
+  for(let r=0;r<3;r++) for(const p of players) p.hand.push(deck.pop());
+  players.forEach(sortPlayerCards);
+  G={players,draw:deck,pile:[],current:0,direction:1,phase:'setup',winnerOrder:[],message:'',mustLow:false};
+  aiSetup(); renderSetup();
+}
+function scoreCard(c){
+  if(c.rank==='2')return 100;if(c.rank==='10')return 98;if(c.rank==='JOKER')return 94;if(c.rank==='4')return 90;if(c.rank==='8')return 82;if(c.rank==='7')return 70;return value[c.rank];
+}
+function aiSetup(){
+  for(let i=1;i<G.players.length;i++){const p=G.players[i], all=[...p.hand,...p.face].sort((a,b)=>scoreCard(b)-scoreCard(a));p.face=sortCards(all.slice(0,3));p.hand=sortCards(all.slice(3));}
+}
+function renderSetup(){
+  $('start').classList.add('hidden');$('setup').classList.remove('hidden');
+  $('setupFace').innerHTML=G.players[0].face.map(c=>cardHTML(c,{cls:'selectable'})).join('');
+  $('setupHand').innerHTML=G.players[0].hand.map(c=>cardHTML(c,{cls:'selectable'})).join('');
+  document.querySelectorAll('#setup .card').forEach(el=>el.onclick=()=>setupTap(el.dataset.id));
+}
+function setupTap(id){
+  const p=G.players[0], inHand=p.hand.find(c=>c.id===id), zone=inHand?'hand':'face';
+  if(!selectedSetup){selectedSetup={id,zone};$('setupNote').textContent='Now tap a card in the other row.';highlightSetup();return}
+  if(zone===selectedSetup.zone){selectedSetup={id,zone};highlightSetup();return}
+  const a=selectedSetup.zone==='hand'?p.hand:p.face,b=zone==='hand'?p.hand:p.face;
+  const ai=a.findIndex(c=>c.id===selectedSetup.id),bi=b.findIndex(c=>c.id===id);[a[ai],b[bi]]=[b[bi],a[ai]];
+  sortPlayerCards(p);
+  selectedSetup=null;$('setupNote').textContent='';renderSetup();
+}
+function highlightSetup(){document.querySelectorAll('#setup .card').forEach(el=>el.classList.toggle('selected',el.dataset.id===selectedSetup?.id))}
+function startGame(){
+  G.phase='play';$('setup').classList.add('hidden');$('game').classList.remove('hidden');
+  let red=[];G.players.forEach((p,i)=>p.hand.forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))red.push(i)}));
+  if(red.length)G.current=red[Math.floor(Math.random()*red.length)];
+  else{let best={v:99,i:0};G.players.forEach((p,i)=>p.hand.forEach(c=>{let v=value[c.rank]??15;if(v<best.v)best={v,i}}));G.current=best.i}
+  G.message=`${G.players[G.current].name} goes first.`;render();maybeAITurn();
+}
+function meaningfulTop(){for(let i=G.pile.length-1;i>=0;i--)if(G.pile[i].rank!=='4')return G.pile[i];return null}
+function consecutiveCount(rank){let n=0;for(let i=G.pile.length-1;i>=0;i--){const c=G.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
+function isMagic(c){return ['2','4','10','JOKER'].includes(c.rank)}
+function legal(c){
+  const top=meaningfulTop();if(!top)return true;
+  if(c.rank==='10'&&top.rank==='7')return false;
+  if(isMagic(c))return true;
+  if(G.mustLow)return value[c.rank]<=7;
+  return value[c.rank]>=value[top.rank];
+}
+function drawUp(p){while(G.draw.length&&p.hand.length<3)p.hand.push(G.draw.pop());p.hand=sortCards(p.hand)}
+function checkFinish(i){const p=G.players[i];if(!G.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;G.winnerOrder.push(i);G.message+=` ${p.name} is out!`}}
+function activeCount(){return G.players.filter(p=>!p.finished).length}
+function advance(steps){for(let s=0;s<steps;s++){let tries=0;do{G.current=(G.current+G.direction+G.players.length)%G.players.length;tries++}while(G.players[G.current].finished&&tries<=G.players.length)}}
+function playCards(i,cards){
+  if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0]))return false;
+  const p=G.players[i];
+  for(const c of cards){for(const z of ['hand','face','down']){const x=p[z].findIndex(q=>q.id===c.id);if(x>=0){p[z].splice(x,1);break}}G.pile.push(c)}
+  const rank=cards[0].rank;let clear=false,sameTurn=false;
+  if(rank==='JOKER')for(let k=0;k<cards.length;k++)G.direction*=-1;
+  if(rank==='8'){
+    G.mustLow=false;drawUp(p);checkFinish(i);G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`;
+    advance(cards.length+1);render();maybeAITurn();return true;
+  }
+  if(rank==='10'){clear=true;sameTurn=true}
+  if(rank==='2')G.mustLow=false;else if(rank==='7')G.mustLow=true;else if(rank==='4'){}else G.mustLow=false;
+  if(rank!=='4'&&consecutiveCount(rank)>=4){clear=true;sameTurn=true}
+  if(clear){G.pile=[];G.mustLow=false;G.message=`${p.name} cleared the pile and plays again.`}
+  else G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
+  drawUp(p);checkFinish(i);if(!sameTurn)advance(1);render();maybeAITurn();return true;
+}
+function pickup(i){
+  const p=G.players[i];if(!G.pile.length)return;
+  p.hand.push(...G.pile);p.hand=sortCards(p.hand);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;advance(1);render();maybeAITurn();
+}
+function availableZone(p){if(p.hand.length)return 'hand';if(G.draw.length)return 'hand';if(p.face.length)return 'face';return 'down'}
+function legalGroups(p){
+  const z=availableZone(p);if(z==='down')return p.down.map(c=>[c]);
+  const by={};p[z].forEach(c=>(by[c.rank]??=[]).push(c));return Object.values(by).filter(g=>legal(g[0]));
+}
+function aiTurn(){
+  if(G.phase!=='play'||G.current===0)return;if(activeCount()<=1)return endGame();
+  const i=G.current,p=G.players[i],z=availableZone(p);
+  if(z==='down'){const c=p.down[Math.floor(Math.random()*p.down.length)];p.down=p.down.filter(x=>x.id!==c.id);if(legal(c))playCards(i,[c]);else{G.pile.push(c);pickup(i)}return}
+  const groups=legalGroups(p);if(!groups.length){pickup(i);return}
+  groups.sort((a,b)=>scoreCard(a[0])-scoreCard(b[0]));let g=groups[0];
+  for(const cand of groups)if(cand[0].rank!=='4'&&consecutiveCount(cand[0].rank)+cand.length>=4){g=cand;break}
+  playCards(i,g);
+}
+function maybeAITurn(){if(activeCount()<=1){endGame();return}if(G.current!==0)setTimeout(aiTurn,550)}
+function endGame(){G.phase='done';const loser=G.players.find(p=>!p.finished);G.message=`${loser?.name||'Nobody'} is the SHITHEAD.`;render()}
+function humanPlay(){
+  if(G.current!==0||G.phase!=='play')return;const p=G.players[0],z=availableZone(p);if(z==='down')return;
+  const cards=p[z].filter(c=>selectedPlay.includes(c.id));if(playCards(0,cards))selectedPlay=[];
+}
+function humanDown(id){
+  if(G.current!==0)return;const p=G.players[0];if(availableZone(p)!=='down')return;
+  const c=p.down.find(x=>x.id===id);p.down=p.down.filter(x=>x.id!==id);if(legal(c))playCards(0,[c]);else{G.pile.push(c);pickup(0)}
+}
+function toggleSelect(id){
+  if(G.current!==0)return;const p=G.players[0],z=availableZone(p);if(z==='down')return;
+  const arr=p[z],c=arr.find(x=>x.id===id);if(!c)return;
+  if(selectedPlay.length){const first=arr.find(x=>x.id===selectedPlay[0]);if(first&&first.rank!==c.rank)selectedPlay=[]}
+  selectedPlay=selectedPlay.includes(id)?selectedPlay.filter(x=>x!==id):[...selectedPlay,id];render();
+}
+function render(){
+  const p=G.players[0];
+  $('opponents').innerHTML=G.players.slice(1).map((q,idx)=>{
+    const total=q.hand.length+q.face.length+q.down.length;
+    return `<div class="player ${G.current===idx+1?'active':''} ${q.finished?'finished':''}">
+      <div class="oppMeta"><div style="font-weight:800">${q.name}${q.finished?' ✓':''}</div><div class="oppCount">${total} cards</div></div>
+      <div class="small">Hand ${q.hand.length} · Face-up ${q.face.length} · Face-down ${q.down.length}</div>
+      <div class="cards" style="margin-top:7px">${q.face.map(c=>cardHTML(c)).join('')}</div>
+    </div>`;
+  }).join('');
+  $('drawCount').textContent=G.draw.length;$('pileCount').textContent=`Pile: ${G.pile.length} card${G.pile.length===1?'':'s'}`;$('direction').textContent=G.direction===1?'↻':'↺';
+  const top=G.pile[G.pile.length-1];$('topCard').innerHTML=top?cardHTML(top,{cls:'pileCard'}):'<div class="small">Empty pile</div>';
+  $('status').textContent=G.message+(G.phase==='play'&&G.current===0?' Your turn.':'');
+  $('yourFace').innerHTML=p.face.map(c=>cardHTML(c,{cls:availableZone(p)==='face'&&G.current===0?'selectable':''})).join('');
+  $('yourDown').innerHTML=p.down.map(c=>cardHTML(c,{back:true,cls:availableZone(p)==='down'&&G.current===0?'selectable':''})).join('');
+  $('yourHand').innerHTML=p.hand.map(c=>cardHTML(c,{cls:availableZone(p)==='hand'&&G.current===0?'selectable':''})).join('');
+  document.querySelectorAll('#yourHand .card,#yourFace .card').forEach(el=>{el.onclick=()=>toggleSelect(el.dataset.id);el.classList.toggle('selected',selectedPlay.includes(el.dataset.id))});
+  document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>humanDown(el.dataset.id));
+  const z=availableZone(p);$('playBtn').disabled=G.current!==0||G.phase!=='play'||z==='down'||selectedPlay.length===0;
+  $('pickupBtn').disabled=G.current!==0||G.phase!=='play'||G.pile.length===0;
+}
+$('newGame').onclick=()=>deal(parseInt($('playerCount').value));
+$('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+}
+</script>
+
+</body>
+</html>
