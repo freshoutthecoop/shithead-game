@@ -43,21 +43,21 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v24 · protected by anonymous auth</div>
+<div class="small">Firebase multiplayer v25 · auth-ready</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
-  <button id="leaderBtn" class="btn" type="button">Leaderboard</button>
+  <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
 </div>
 
 <div id="home" class="panel">
   <div class="row">
     <input id="nameInput" placeholder="Username" maxlength="18" />
-    <button id="hostBtn" class="btn primary">Host Game</button>
+    <button id="hostBtn" class="btn primary" disabled>Host Game</button>
   </div>
   <div class="small" style="margin:10px 0 5px">or join a room</div>
   <div class="row">
     <input id="roomInput" placeholder="Room code" maxlength="8" style="text-transform:uppercase" />
-    <button id="joinBtn" class="btn">Join Game</button>
+    <button id="joinBtn" class="btn" disabled>Join Game</button>
   </div>
   <div id="connectMsg" style="margin-top:10px;min-height:22px;font-weight:800;color:#fff2c2"></div>
 </div>
@@ -130,15 +130,44 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 const auth=firebase.auth();
 let authUser=null;
+let authReadyResolve, authReadyReject;
+const authReady=new Promise((resolve,reject)=>{authReadyResolve=resolve;authReadyReject=reject});
 
-async function ensureAuth(){
+auth.onAuthStateChanged(user=>{
+  if(user){
+    authUser=user;
+    authReadyResolve(user);
+    const hostBtn=document.getElementById('hostBtn');
+    const joinBtn=document.getElementById('joinBtn');
+    const leaderBtn=document.getElementById('leaderBtn');
+    if(hostBtn)hostBtn.disabled=false;
+    if(joinBtn)joinBtn.disabled=false;
+    if(leaderBtn)leaderBtn.disabled=false;
+    const msg=document.getElementById('connectMsg');
+    if(msg && msg.textContent.includes('Signing'))msg.textContent='';
+  }
+},err=>{
+  authReadyReject(err);
+  const msg=document.getElementById('connectMsg');
+  if(msg)msg.textContent='Authentication failed: '+err.message;
+});
+
+async function initAnonymousAuth(){
   if(auth.currentUser){
     authUser=auth.currentUser;
-    return authUser;
+    return auth.currentUser;
   }
-  const result=await auth.signInAnonymously();
-  authUser=result.user;
-  return authUser;
+  try{
+    await auth.signInAnonymously();
+    return await authReady;
+  }catch(err){
+    throw new Error('Anonymous sign-in failed: '+err.message);
+  }
+}
+
+async function ensureAuth(){
+  if(authUser)return authUser;
+  return await authReady;
 }
 
 const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -185,7 +214,7 @@ function listenRoom(){
 
 async function hostGame(){
   const name=username();if(!name)return;
-  setMsg('Signing in…');
+  setMsg('Checking authentication…');
   await ensureAuth();
   roomCode=makeRoom();myId=makeId();isHost=true;
   roomRef=db.ref('rooms/'+roomCode);
@@ -204,7 +233,7 @@ async function hostGame(){
 
 async function joinGame(){
   const name=username();if(!name)return;
-  setMsg('Signing in…');
+  setMsg('Checking authentication…');
   await ensureAuth();
   roomCode=cleanRoom($('roomInput').value);$('roomInput').value=roomCode;
   if(!roomCode){setMsg('Enter the room code.');return}
@@ -467,6 +496,15 @@ async function showLeaderboard(){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
+  setMsg('Signing in securely…');
+  initAnonymousAuth()
+    .then(()=>setMsg(''))
+    .catch(e=>{
+      setMsg(e.message);
+      $('hostBtn').disabled=true;
+      $('joinBtn').disabled=true;
+      $('leaderBtn').disabled=true;
+    });
   $('hostBtn').onclick=()=>hostGame().catch(e=>setMsg(e.message));
   $('joinBtn').onclick=()=>joinGame().catch(e=>setMsg(e.message));
   $('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame().catch(err=>setMsg(err.message))});

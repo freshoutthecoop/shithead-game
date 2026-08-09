@@ -1,13 +1,9 @@
-Shithead v24 - Firebase Anonymous Authentication
+Shithead v25 - Firebase auth-ready fix
 
-Upload:
-- index.html
-- single.html
-- multiplayer.html
-
-Then in Firebase Realtime Database > Rules, replace the public test rules with the contents of firebase-rules.json and Publish.
-
-Players do NOT create accounts. Firebase silently signs them in anonymously before room or leaderboard access.
-
-These rules are substantially safer than public rules because unauthenticated internet traffic is denied.
-They still allow any authenticated Shithead client to write room/leaderboard data; a later hardening step can restrict writes more narrowly by room membership/host.
+Changes:
+- Host, Join, and Leaderboard buttons start disabled.
+- The app signs in anonymously on page load.
+- Buttons enable only after Firebase onAuthStateChanged confirms a real authenticated user.
+- All room/leaderboard database access waits for confirmed auth.
+- Single-player remains unchanged.
+- Keep the authenticated Realtime Database rules from v24.
