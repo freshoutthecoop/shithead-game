@@ -53,13 +53,42 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 .historyItem{font-size:12px;line-height:1.35;color:#eef6f1}
 .historyItem .time{color:var(--muted);margin-right:5px}
 @media(max-width:650px){.historyList{max-height:130px}}
+
+.card.joker{
+  background:linear-gradient(145deg,#fff8d8,#ffffff);
+  color:#6a1b9a;
+  border:3px solid #ffd166;
+  box-shadow:inset 0 0 0 2px #6a1b9a,0 2px 6px rgba(0,0,0,.25);
+}
+.card.joker .rank{
+  font-size:14px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:-.5px;
+}
+.card.joker .suit{
+  font-size:27px;
+  line-height:1;
+  align-self:center;
+}
+@media(max-width:650px){
+  #opponents .card.joker{border-width:2px}
+  #opponents .card.joker .rank{font-size:7px}
+  #opponents .card.joker .suit{font-size:11px}
+}
 </style>
+<link rel="icon" type="image/png" href="favicon.png?v=29">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shithead">
+<link rel="manifest" href="manifest.webmanifest?v=29">
 </head>
 <body>
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v28 · transparent Joker</div>
+<div class="small">Firebase multiplayer v31 · chat above history</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -108,10 +137,6 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
     <div class="small">FACE DOWN</div><div id="yourDown" class="cards" style="margin:5px 0 10px"></div>
     <div class="small">HAND</div><div id="yourHand" class="cards" style="margin:5px 0 10px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up</button></div>
-    <div class="historyBox">
-      <div class="small" style="font-weight:800;margin-bottom:5px">TURN HISTORY</div>
-      <div id="historyList" class="historyList"></div>
-    </div>
     <div class="chatBox">
       <div class="small" style="font-weight:800;margin-bottom:5px">GAME CHAT</div>
       <div id="chatMessages" class="chatMessages"></div>
@@ -119,6 +144,10 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
         <input id="chatInput" maxlength="180" placeholder="Message players…" />
         <button id="chatSend" class="btn" type="button">Send</button>
       </div>
+    </div>
+    <div class="historyBox">
+      <div class="small" style="font-weight:800;margin-bottom:5px">TURN HISTORY</div>
+      <div id="historyList" class="historyList"></div>
     </div>
   </div>
 </div>
@@ -221,7 +250,7 @@ function showOnly(id){['home','lobby','setup','game'].forEach(x=>x===id?show(x):
 function sortCards(a){const so={'♥':0,'♦':1,'♣':2,'♠':3,'':4};return [...(a||[])].sort((x,y)=>(val[x.rank]-val[y.rank])||((so[x.suit]??9)-(so[y.suit]??9)))}
 function cardHTML(c,o={}){
   const red=c.suit==='♥'||c.suit==='♦', text=c.rank==='JOKER'?'🃏':c.rank;
-  return `<div class="card ${red?'red':''} ${o.back?'back':''} ${o.selectable?'selectable':''}" data-id="${c.id||''}"><span class="rank">${o.back?'':text}</span><span class="suit">${o.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
+  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!o.back?'joker':''} ${o.back?'back':''} ${o.selectable?'selectable':''}" data-id="${c.id||''}"><span class="rank">${o.back?'':(c.rank==='JOKER'?'JOKER':text)}</span><span class="suit">${o.back?'':(c.rank==='JOKER'?'★':c.suit)}</span></div>`;
 }
 function normalizePlayers(obj){
   if(!obj)return [];
@@ -393,7 +422,8 @@ function legal(c,g){
   const top=meaningfulTop(g);if(!top)return true;
   if(c.rank==='10'&&top.rank==='7')return false;
   if(magic(c))return true;
-  if(g.mustLow)return val[c.rank]<=7;
+  // 4s and Jokers are transparent: the underlying meaningful card controls legality.
+  if(top.rank==='7')return val[c.rank]<=7;
   return val[c.rank]>=val[top.rank];
 }
 function activeZone(p,g){if((p.hand||[]).length)return'hand';if((g.draw||[]).length)return'hand';if((p.face||[]).length)return'face';return'down'}

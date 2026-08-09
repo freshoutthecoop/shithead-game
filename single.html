@@ -20,7 +20,36 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
 .setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
+
+.card.joker{
+  background:linear-gradient(145deg,#fff8d8,#ffffff);
+  color:#6a1b9a;
+  border:3px solid #ffd166;
+  box-shadow:inset 0 0 0 2px #6a1b9a,0 2px 6px rgba(0,0,0,.25);
+}
+.card.joker .rank{
+  font-size:14px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:-.5px;
+}
+.card.joker .suit{
+  font-size:27px;
+  line-height:1;
+  align-self:center;
+}
+@media(max-width:650px){
+  #opponents .card.joker{border-width:2px}
+  #opponents .card.joker .rank{font-size:7px}
+  #opponents .card.joker .suit{font-size:11px}
+}
 </style>
+<link rel="icon" type="image/png" href="favicon.png?v=29">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shithead">
+<link rel="manifest" href="manifest.webmanifest?v=29">
 </head>
 <body>
 <div class="wrap">
@@ -80,7 +109,7 @@ function makeDeck(nPlayers){
 }
 function cardHTML(c,opts={}){
   const red=c.suit==='♥'||c.suit==='♦', txt=c.rank==='JOKER'?'🃏':c.rank;
-  return `<div class="card ${red?'red':''} ${opts.back?'back':''} ${opts.cls||''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':txt}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
+  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!opts.back?'joker':''} ${opts.back?'back':''} ${opts.cls||''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':(c.rank==='JOKER'?'JOKER':txt)}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'★':c.suit)}</span></div>`;
 }
 function sortCards(cards){
   const suitOrder={'♥':0,'♦':1,'♣':2,'♠':3,'':4};
