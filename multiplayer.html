@@ -290,6 +290,14 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 #topCard .card.joker .rank{font-size:9px !important}
 #topCard .card.joker .suit::after{font-size:28px}
 
+
+#replayBox{
+  display:block;
+  border:2px solid #ffd166 !important;
+  background:rgba(255,209,102,.12) !important;
+}
+#replayBox.hidden{display:none !important}
+#replayBtn{width:100%;font-size:15px;padding:10px}
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -303,7 +311,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v41 · walkthrough toggle</div>
+<div class="small">Firebase multiplayer v43 · walkthrough + single history fix</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -1022,10 +1030,18 @@ async function playDown(id){
 
 
 
+function gameIsFinished(){
+  const players=getPlayers();
+  const g=room?.game||{};
+  return room?.phase==='done' ||
+    !!g.shithead ||
+    !!g.gameOver ||
+    (players.length>1 && players.filter(p=>!p.finished).length<=1);
+}
 function renderReplay(){
   const box=$('replayBox');
   if(!box)return;
-  if(room?.phase!=='done'){
+  if(!gameIsFinished()){
     box.classList.add('hidden');
     return;
   }
@@ -1048,14 +1064,17 @@ function renderReplay(){
 
 async function requestReplay(){
   await ensureAuth();
-  if(!roomRef||!room||room.phase!=='done')return;
+  if(!roomRef||!room||!gameIsFinished())return;
   await roomRef.child('replayReady/'+myId).set(true);
 }
 
 async function startRematch(){
   if(!isHost)return;
   await roomRef.transaction(cur=>{
-    if(!cur||cur.phase!=='done')return cur;
+    if(!cur)return cur;
+    const terminal = cur.phase==='done' || !!cur.game?.shithead || !!cur.game?.gameOver ||
+      (normalizePlayers(cur.players).length>1 && normalizePlayers(cur.players).filter(p=>!p.finished).length<=1);
+    if(!terminal)return cur;
     const players=normalizePlayers(cur.players);
     const ready=cur.replayReady||{};
     if(players.length<2 || !players.every(p=>ready[p.id]))return cur;

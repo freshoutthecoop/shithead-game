@@ -1,11 +1,8 @@
-Shithead v41
+Shithead v43
 
-Joker visual redesign:
-- Joker now looks like a recognizable playing card.
-- White card face with purple border.
-- JOKER label in the corner.
-- Large clown head in the center instead of a suit/star.
-- Scales down appropriately in opponent strips and face-up card rows.
-
-All v40 walkthrough, difficulty, multiplayer, layout, chat, leaderboard,
-rematch, notification, app-icon, and gameplay-rule features remain.
+Fixes:
+- Walkthrough toggle is now visibly present in BOTH single-player and multiplayer.
+- Single-player now has a collapsible Turn History panel.
+- Single-player history records core plays, pickups, clears, and game start.
+- Existing compact layouts, difficulty levels, Firebase multiplayer, rematch, chat,
+  notifications, leaderboard, app icon, Joker design, and rules remain.

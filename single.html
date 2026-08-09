@@ -247,6 +247,15 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 #topCard .card.joker .rank{font-size:9px !important}
 #topCard .card.joker .suit::after{font-size:28px}
 
+
+.walkStatus{font-size:10px;color:#dfffe7;margin-top:4px}
+.historyBox{margin-top:6px;background:rgba(0,0,0,.14);border:1px solid rgba(255,255,255,.10);border-radius:9px;overflow:hidden}
+.historyBox > .small:first-child{padding:8px 9px;margin:0!important;background:rgba(0,0,0,.10)}
+.historyList{display:none;max-height:130px;overflow:auto;flex-direction:column;gap:4px;padding:8px}
+.historyBox.open .historyList{display:flex}
+.historyItem{font-size:12px;line-height:1.35;color:#eef6f1}
+.historyBox > .small:first-child::after{content:'▾';float:right}
+.historyBox.open > .small:first-child::after{content:'▴'}
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -265,7 +274,8 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
       <select id="playerCount"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select>
     </label>
   </div>
-  <div style="margin-top:12px"><button id="newGame" class="btn primary">New Game</button></div>
+  <div style="margin-top:12px"><button id="walkBtn" class="btn" type="button" style="margin:7px 0">Walkthrough: Off</button>
+<button id="newGame" class="btn primary">New Game</button></div>
 </div>
 
 <div id="setup" class="panel hidden">
@@ -291,6 +301,11 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
     <div class="label">YOUR FACE-DOWN CARDS</div><div id="yourDown" class="cards" style="margin:6px 0 12px"></div>
     <div class="label">YOUR HAND</div><div id="yourHand" class="cards" style="margin:6px 0 12px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up Pile</button></div>
+<div class="historyBox">
+  <div id="singleHistoryToggle" class="small" style="font-weight:800;cursor:pointer">TURN HISTORY</div>
+  <div id="singleHistoryList" class="historyList"></div>
+</div>
+
   </div>
 </div>
 </div>
@@ -301,6 +316,7 @@ const suits=['♥','♦','♣','♠'];
 const value={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14,JOKER:15};
 let difficulty='medium';
 let walkthroughOn=false;
+let singleHistory=[];
 let G=null, selectedSetup=null, selectedPlay=[];
 const $=id=>document.getElementById(id);
 
@@ -362,6 +378,7 @@ function deal(n){
   for(let r=0;r<3;r++) for(const p of players) p.hand.push(deck.pop());
   players.forEach(sortPlayerCards);
   G={players,draw:deck,pile:[],current:0,direction:1,phase:'setup',winnerOrder:[],message:'',mustLow:false};
+  singleHistory=[];
   aiSetup(); renderSetup();
 }
 function scoreCard(c){
@@ -391,7 +408,8 @@ function startGame(){
   let red=[];G.players.forEach((p,i)=>p.hand.forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))red.push(i)}));
   if(red.length)G.current=red[Math.floor(Math.random()*red.length)];
   else{let best={v:99,i:0};G.players.forEach((p,i)=>p.hand.forEach(c=>{let v=value[c.rank]??15;if(v<best.v)best={v,i}}));G.current=best.i}
-  G.message=`${G.players[G.current].name} goes first.`;render();maybeAITurn();
+  G.message=`${G.players[G.current].name} goes first.`;
+  addSingleHistory(`${G.players[G.current].name} starts the game.`,'start');render();maybeAITurn();
 }
 function replayTarget(){
   for(let i=G.pile.length-1;i>=0;i--){
@@ -470,6 +488,7 @@ function playCards(i,cards){
     G.pile=[];
     G.mustLow=false;
     G.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+    addSingleHistory(`${p.name} made four ${rank}s. Pile cleared.`,'clear');
     drawUp(p);
     checkFinish(i);
     render();
@@ -539,8 +558,10 @@ function playCards(i,cards){
     G.pile=[];
     G.mustLow=false;
     G.message=`${p.name} cleared the pile and plays again.`;
+    addSingleHistory(`${p.name} cleared the pile.`,'clear');
   } else {
     G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
+    addSingleHistory(`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`,'play');
   }
 
   drawUp(p);
@@ -552,7 +573,8 @@ function playCards(i,cards){
 }
 function pickup(i){
   const p=G.players[i];if(!G.pile.length)return;
-  p.hand.push(...G.pile);p.hand=sortCards(p.hand);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;advance(1);render();maybeAITurn();
+  p.hand.push(...G.pile);p.hand=sortCards(p.hand);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;
+  addSingleHistory(`${p.name} picked up the pile.`,'pickup');advance(1);render();maybeAITurn();
 }
 function availableZone(p){if(p.hand.length)return 'hand';if(G.draw.length)return 'hand';if(p.face.length)return 'face';return 'down'}
 function legalGroups(p){
@@ -590,6 +612,23 @@ function singleHintPlayable(card,p,zone){
   if(zone==='down')return false;
   return legal(card);
 }
+
+function addSingleHistory(text,type='turn'){
+  singleHistory.push({text,type,ts:Date.now()});
+  if(singleHistory.length>100)singleHistory=singleHistory.slice(-100);
+}
+function renderSingleHistory(){
+  const box=document.getElementById('singleHistoryList');
+  if(!box)return;
+  const recent=singleHistory.slice(-80);
+  box.innerHTML=recent.length
+    ? recent.map(h=>{
+        const tm=new Date(h.ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+        return `<div class="historyItem"><span style="color:var(--muted);margin-right:5px">${tm}</span>${h.text}</div>`;
+      }).join('')
+    : '<div class="small">No turns yet.</div>';
+  box.scrollTop=box.scrollHeight;
+}
 function render(){
   const p=G.players[0];
   $('opponents').innerHTML=G.players.slice(1).map((q,idx)=>`<div class="player ${G.current===idx+1?'active':''} ${q.finished?'finished':''}"><div style="font-weight:800">${q.name}${q.finished?' ✓':''}</div><div class="small">Hand: ${q.hand.length}</div><div class="cards" style="margin-top:5px">${q.face.map(c=>cardHTML(c)).join('')}</div><div class="small">Face-down: ${q.down.length}</div></div>`).join('');
@@ -603,6 +642,8 @@ function render(){
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>humanDown(el.dataset.id));
   const z=availableZone(p);$('playBtn').disabled=G.current!==0||G.phase!=='play'||z==='down'||selectedPlay.length===0;
   $('pickupBtn').disabled=G.current!==0||G.phase!=='play'||G.pile.length===0;
+
+  renderSingleHistory();
 }
 $('newGame').onclick=()=>deal(parseInt($('playerCount').value));
 $('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);
@@ -626,6 +667,16 @@ document.getElementById('walkBtn')?.addEventListener('click',()=>{
   walkthroughOn=!walkthroughOn;
   document.getElementById('walkBtn').textContent=`Walkthrough: ${walkthroughOn?'On':'Off'}`;
   if(typeof render==='function' && typeof G!=='undefined' && G)render();
+});
+
+
+document.getElementById('walkBtn')?.addEventListener('click',()=>{
+  walkthroughOn=!walkthroughOn;
+  document.getElementById('walkBtn').textContent=`Walkthrough: ${walkthroughOn?'On':'Off'}`;
+  if(typeof render==='function' && typeof G!=='undefined' && G)render();
+});
+document.getElementById('singleHistoryToggle')?.addEventListener('click',()=>{
+  document.querySelector('.historyBox')?.classList.toggle('open');
 });
 
 </script>
