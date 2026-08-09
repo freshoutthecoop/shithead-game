@@ -1,9 +1,11 @@
-Shithead v25 - Firebase auth-ready fix
+Shithead v26
 
 Changes:
-- Host, Join, and Leaderboard buttons start disabled.
-- The app signs in anonymously on page load.
-- Buttons enable only after Firebase onAuthStateChanged confirms a real authenticated user.
-- All room/leaderboard database access waits for confirmed auth.
-- Single-player remains unchanged.
-- Keep the authenticated Realtime Database rules from v24.
+- Four-of-a-kind clear applies to EVERY rank, including 2, 4, 7, 8, 10, and Joker.
+- Four 8s clear the pile and the same player goes again instead of applying the normal skip effect.
+- Transparent 4s still do not interrupt four-of-a-kind runs of other ranks.
+- Four 4s themselves now also clear.
+- Multiplayer has Firebase room chat.
+- Chat messages are stored under the active room and visible to everyone in that room.
+- Anonymous Firebase authentication remains required.
+- Existing v24/v25 database rules still cover chat because chat is stored inside /rooms.

@@ -131,7 +131,20 @@ function startGame(){
   G.message=`${G.players[G.current].name} goes first.`;render();maybeAITurn();
 }
 function meaningfulTop(){for(let i=G.pile.length-1;i>=0;i--)if(G.pile[i].rank!=='4')return G.pile[i];return null}
-function consecutiveCount(rank){let n=0;for(let i=G.pile.length-1;i>=0;i--){const c=G.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
+function consecutiveCount(rank){
+  let n=0;
+  if(rank==='4'){
+    for(let i=G.pile.length-1;i>=0;i--){if(G.pile[i].rank==='4')n++;else break}
+    return n;
+  }
+  for(let i=G.pile.length-1;i>=0;i--){
+    const c=G.pile[i];
+    if(c.rank==='4')continue;
+    if(c.rank===rank)n++;
+    else break;
+  }
+  return n;
+}
 function isMagic(c){return ['2','4','10','JOKER'].includes(c.rank)}
 function legal(c){
   const top=meaningfulTop();if(!top)return true;
@@ -147,19 +160,66 @@ function advance(steps){for(let s=0;s<steps;s++){let tries=0;do{G.current=(G.cur
 function playCards(i,cards){
   if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0]))return false;
   const p=G.players[i];
-  for(const c of cards){for(const z of ['hand','face','down']){const x=p[z].findIndex(q=>q.id===c.id);if(x>=0){p[z].splice(x,1);break}}G.pile.push(c)}
-  const rank=cards[0].rank;let clear=false,sameTurn=false;
-  if(rank==='JOKER')for(let k=0;k<cards.length;k++)G.direction*=-1;
-  if(rank==='8'){
-    G.mustLow=false;drawUp(p);checkFinish(i);G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`;
-    advance(cards.length+1);render();maybeAITurn();return true;
+  for(const c of cards){
+    for(const z of ['hand','face','down']){
+      const x=p[z].findIndex(q=>q.id===c.id);
+      if(x>=0){p[z].splice(x,1);break}
+    }
+    G.pile.push(c);
   }
+
+  const rank=cards[0].rank;
+
+  // Four of ANY rank clears before ordinary magic/special effects.
+  if(consecutiveCount(rank)>=4){
+    G.pile=[];
+    G.mustLow=false;
+    G.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+    drawUp(p);
+    checkFinish(i);
+    render();
+    maybeAITurn();
+    return true;
+  }
+
+  let clear=false,sameTurn=false;
+
+  if(rank==='JOKER'){
+    for(let k=0;k<cards.length;k++)G.direction*=-1;
+  }
+
+  if(rank==='8'){
+    G.mustLow=false;
+    drawUp(p);
+    checkFinish(i);
+    G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`;
+    advance(cards.length+1);
+    render();
+    maybeAITurn();
+    return true;
+  }
+
   if(rank==='10'){clear=true;sameTurn=true}
-  if(rank==='2')G.mustLow=false;else if(rank==='7')G.mustLow=true;else if(rank==='4'){}else G.mustLow=false;
-  if(rank!=='4'&&consecutiveCount(rank)>=4){clear=true;sameTurn=true}
-  if(clear){G.pile=[];G.mustLow=false;G.message=`${p.name} cleared the pile and plays again.`}
-  else G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
-  drawUp(p);checkFinish(i);if(!sameTurn)advance(1);render();maybeAITurn();return true;
+
+  if(rank==='2')G.mustLow=false;
+  else if(rank==='7')G.mustLow=true;
+  else if(rank==='4'){}
+  else G.mustLow=false;
+
+  if(clear){
+    G.pile=[];
+    G.mustLow=false;
+    G.message=`${p.name} cleared the pile and plays again.`;
+  } else {
+    G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
+  }
+
+  drawUp(p);
+  checkFinish(i);
+  if(!sameTurn)advance(1);
+  render();
+  maybeAITurn();
+  return true;
 }
 function pickup(i){
   const p=G.players[i];if(!G.pile.length)return;

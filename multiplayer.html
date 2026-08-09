@@ -37,13 +37,23 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
   #opponents .small{font-size:10px;white-space:nowrap}
   #opponents .name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+
+.chatBox{margin-top:8px;background:rgba(0,0,0,.14);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px}
+.chatMessages{max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:7px}
+.chatMessage{font-size:13px;line-height:1.35}
+.chatMessage strong{margin-right:4px}
+.chatRow{display:grid;grid-template-columns:1fr auto;gap:6px}
+.chatRow input{width:100%}
+@media(max-width:650px){
+  .chatMessages{max-height:120px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v25 · auth-ready</div>
+<div class="small">Firebase multiplayer v26 · chat + universal four-of-a-kind</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -92,6 +102,14 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
     <div class="small">FACE DOWN</div><div id="yourDown" class="cards" style="margin:5px 0 10px"></div>
     <div class="small">HAND</div><div id="yourHand" class="cards" style="margin:5px 0 10px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up</button></div>
+    <div class="chatBox">
+      <div class="small" style="font-weight:800;margin-bottom:5px">GAME CHAT</div>
+      <div id="chatMessages" class="chatMessages"></div>
+      <div class="chatRow">
+        <input id="chatInput" maxlength="180" placeholder="Message players…" />
+        <button id="chatSend" class="btn" type="button">Send</button>
+      </div>
+    </div>
   </div>
 </div>
 </div>
@@ -253,7 +271,7 @@ function renderRoom(){
   $('roomCode').textContent=roomCode;
   if(room.phase==='lobby'){showOnly('lobby');renderLobby()}
   else if(room.phase==='setup'){showOnly('setup');renderSetup()}
-  else {showOnly('game');renderGame()}
+  else {showOnly('game');renderGame();renderChat()}
 }
 
 function renderLobby(){
@@ -363,7 +381,24 @@ function legal(c,g){
   return val[c.rank]>=val[top.rank];
 }
 function activeZone(p,g){if((p.hand||[]).length)return'hand';if((g.draw||[]).length)return'hand';if((p.face||[]).length)return'face';return'down'}
-function consecutive(rank,g){let n=0;for(let i=(g.pile||[]).length-1;i>=0;i--){const c=g.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
+function consecutive(rank,g){
+  let n=0;
+  const pile=g.pile||[];
+  if(rank==='4'){
+    for(let i=pile.length-1;i>=0;i--){
+      if(pile[i].rank==='4')n++;
+      else break;
+    }
+    return n;
+  }
+  for(let i=pile.length-1;i>=0;i--){
+    const c=pile[i];
+    if(c.rank==='4')continue;
+    if(c.rank===rank)n++;
+    else break;
+  }
+  return n;
+}
 function drawUp(p,g){p.hand=p.hand||[];g.draw=g.draw||[];while(g.draw.length&&p.hand.length<3)p.hand.push(g.draw.pop());p.hand=sortCards(p.hand)}
 function activePlayers(players){return players.filter(p=>!p.finished)}
 function advance(g,players,n){
@@ -433,24 +468,65 @@ async function playSelected(){
     p[z]=p[z]||[];
     const cards=ids.map(cid=>p[z].find(c=>c.id===cid)).filter(Boolean);
     if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0],g))return cur;
+
     g.pile=g.pile||[];
     const rank=cards[0].rank;
-    cards.forEach(c=>{p[z].splice(p[z].findIndex(x=>x.id===c.id),1);g.pile.push(c)});
-    if(rank==='JOKER')for(let k=0;k<cards.length;k++)g.direction*=-1;
-    if(rank==='8'){
-      g.mustLow=false;drawUp(p,g);g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8.`;finishCheck(cur,players,i);if(cur.phase==='play')advance(g,players,cards.length+1);
-      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+    cards.forEach(c=>{
+      p[z].splice(p[z].findIndex(x=>x.id===c.id),1);
+      g.pile.push(c);
+    });
+
+    // Four of ANY rank clears immediately and overrides the ordinary card effect.
+    if(consecutive(rank,g)>=4){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+      drawUp(p,g);
+      p.hand=sortCards(p.hand||[]);
+      p.face=sortCards(p.face||[]);
+      finishCheck(cur,players,i);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
     }
+
+    if(rank==='JOKER'){
+      for(let k=0;k<cards.length;k++)g.direction*=-1;
+    }
+
+    if(rank==='8'){
+      g.mustLow=false;
+      drawUp(p,g);
+      g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8.`;
+      finishCheck(cur,players,i);
+      if(cur.phase==='play')advance(g,players,cards.length+1);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
     let clear=rank==='10',same=rank==='10';
-    if(rank==='2')g.mustLow=false;else if(rank==='7')g.mustLow=true;else if(rank==='4'){}else g.mustLow=false;
-    if(rank!=='4'&&consecutive(rank,g)>=4){clear=true;same=true}
-    if(clear){g.pile=[];g.mustLow=false;g.message=`${p.name} cleared the pile and plays again.`}
-    else g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
-    drawUp(p,g);p.hand=sortCards(p.hand||[]);p.face=sortCards(p.face||[]);finishCheck(cur,players,i);if(cur.phase==='play'&&!same)advance(g,players,1);
-    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+
+    if(rank==='2')g.mustLow=false;
+    else if(rank==='7')g.mustLow=true;
+    else if(rank==='4'){}
+    else g.mustLow=false;
+
+    if(clear){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} cleared the pile and plays again.`;
+    } else {
+      g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
+    }
+
+    drawUp(p,g);
+    p.hand=sortCards(p.hand||[]);
+    p.face=sortCards(p.face||[]);
+    finishCheck(cur,players,i);
+    if(cur.phase==='play'&&!same)advance(g,players,1);
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+    return cur;
   });
 }
-
 async function pickup(){
   await roomRef.transaction(cur=>{
     if(!cur||cur.phase!=='play')return cur;
@@ -467,24 +543,99 @@ async function playDown(id){
     const players=normalizePlayers(cur.players),g=cur.game;
     const i=players.findIndex(p=>p.id===myId);if(i!==g.current)return cur;
     const p=players[i];if(activeZone(p,g)!=='down')return cur;
-    p.down=p.down||[];const ix=p.down.findIndex(c=>c.id===id);if(ix<0)return cur;
-    const c=p.down.splice(ix,1)[0];g.pile=g.pile||[];
-    if(!legal(c,g)){g.pile.push(c);p.hand=p.hand||[];p.hand.push(...g.pile);p.hand=sortCards(p.hand);g.pile=[];g.mustLow=false;g.message=`${p.name} flipped ${c.rank} and picked up.`;advance(g,players,1)}
-    else{
-      g.pile.push(c);const rank=c.rank;if(rank==='JOKER')g.direction*=-1;
-      if(rank==='8'){g.mustLow=false;g.message=`${p.name} flipped an 8.`;finishCheck(cur,players,i);if(cur.phase==='play')advance(g,players,2)}
-      else{
-        let clear=rank==='10',same=rank==='10';
-        if(rank==='2')g.mustLow=false;else if(rank==='7')g.mustLow=true;else if(rank==='4'){}else g.mustLow=false;
-        if(rank!=='4'&&consecutive(rank,g)>=4){clear=true;same=true}
-        if(clear){g.pile=[];g.mustLow=false;g.message=`${p.name} cleared the pile and plays again.`}else g.message=`${p.name} flipped ${rank}.`;
-        finishCheck(cur,players,i);if(cur.phase==='play'&&!same)advance(g,players,1);
-      }
+    p.down=p.down||[];
+    const ix=p.down.findIndex(c=>c.id===id);if(ix<0)return cur;
+    const c=p.down.splice(ix,1)[0];
+    g.pile=g.pile||[];
+
+    if(!legal(c,g)){
+      g.pile.push(c);
+      p.hand=p.hand||[];
+      p.hand.push(...g.pile);
+      p.hand=sortCards(p.hand);
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} flipped ${c.rank} and picked up.`;
+      advance(g,players,1);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
     }
-    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+
+    g.pile.push(c);
+    const rank=c.rank;
+
+    // Four of ANY rank clears, including 4, 7, 8, Joker, etc.
+    if(consecutive(rank,g)>=4){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+      finishCheck(cur,players,i);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    if(rank==='JOKER')g.direction*=-1;
+
+    if(rank==='8'){
+      g.mustLow=false;
+      g.message=`${p.name} flipped an 8.`;
+      finishCheck(cur,players,i);
+      if(cur.phase==='play')advance(g,players,2);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    let clear=rank==='10',same=rank==='10';
+    if(rank==='2')g.mustLow=false;
+    else if(rank==='7')g.mustLow=true;
+    else if(rank==='4'){}
+    else g.mustLow=false;
+
+    if(clear){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} cleared the pile and plays again.`;
+    } else {
+      g.message=`${p.name} flipped ${rank}.`;
+    }
+
+    finishCheck(cur,players,i);
+    if(cur.phase==='play'&&!same)advance(g,players,1);
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+    return cur;
   });
 }
 
+function renderChat(){
+  const msgs=room?.chat?Object.values(room.chat):[];
+  msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const recent=msgs.slice(-50);
+  const box=$('chatMessages');
+  if(!box)return;
+  box.innerHTML=recent.length
+    ? recent.map(m=>`<div class="chatMessage"><strong>${escapeHtml(m.name||'Player')}:</strong>${escapeHtml(m.text||'')}</div>`).join('')
+    : '<div class="small">No messages yet.</div>';
+  box.scrollTop=box.scrollHeight;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+async function sendChat(){
+  await ensureAuth();
+  if(!roomRef||!room)return;
+  const input=$('chatInput');
+  const text=(input.value||'').trim().slice(0,180);
+  if(!text)return;
+  const p=me();if(!p)return;
+  const ref=roomRef.child('chat').push();
+  await ref.set({
+    uid:authUser.uid,
+    name:p.name,
+    text,
+    ts:firebase.database.ServerValue.TIMESTAMP
+  });
+  input.value='';
+}
 async function showLeaderboard(){
   await ensureAuth();
   $('leaderRows').innerHTML='<div class="small">Loading…</div>';
@@ -512,6 +663,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('readyBtn').onclick=()=>ready().catch(e=>setMsg(e.message));
   $('playBtn').onclick=()=>playSelected().catch(e=>setMsg(e.message));
   $('pickupBtn').onclick=()=>pickup().catch(e=>setMsg(e.message));
+  $('chatSend').onclick=()=>sendChat().catch(e=>setMsg(e.message));
+  $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat().catch(err=>setMsg(err.message))});
   $('helpBtn').onclick=()=>$('helpModal').classList.add('open');
   $('helpClose').onclick=()=>$('helpModal').classList.remove('open');
   $('helpModal').onclick=e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('open')};
