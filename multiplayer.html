@@ -245,7 +245,7 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
     <input id="roomInput" placeholder="Room code" maxlength="8" style="text-transform:uppercase"/>
     <button id="joinBtn" class="btn">Join Game</button>
   </div>
-  <div id="connectMsg" class="small" style="margin-top:10px"></div>
+  <div id="connectMsg" class="small" style="margin-top:10px;min-height:18px"></div><div class="row" style="margin-top:8px"><button id="mpHelpBtn" class="btn" type="button">How to Play</button><button id="mpLeaderBtn" class="btn" type="button">Leaderboard</button></div>
 </div>
 
 <div id="lobby" class="panel hidden">
@@ -929,22 +929,6 @@ function playDown(id){
 }
 
 
-function mpReadLeaderboard(){
-  try{return JSON.parse(localStorage.getItem('shitheadLeaderboard')||'{}')}catch{return {}}
-}
-function mpRenderLeaderboard(){
-  const rows=Object.entries(mpReadLeaderboard()).sort((a,b)=>b[1]-a[1]);
-  $('mpLeaderRows').innerHTML=rows.length
-    ? rows.map(([n,w],i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)"><span>${i+1}. ${n}</span><strong>${w}</strong></div>`).join('')
-    : '<p>No wins recorded yet.</p>';
-}
-$('mpHelpBtn').onclick=()=>document.getElementById('mpHelpModal').classList.add('open');
-$('mpLeaderBtn').onclick=()=>{mpRenderLeaderboard();document.getElementById('mpLeaderModal').classList.add('open')};
-$('mpHelpClose').onclick=()=>document.getElementById('mpHelpModal').classList.remove('open');
-$('mpLeaderClose').onclick=()=>document.getElementById('mpLeaderModal').classList.remove('open');
-$('mpHelpModal').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
-$('mpLeaderModal').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
-
 $('hostBtn').onclick=hostGame;
 $('joinBtn').onclick=joinGame;
 $('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame()});
@@ -958,6 +942,34 @@ $('readyBtn').onclick=()=>{
 
 $('playBtn').onclick=doPlay;
 $('pickupBtn').onclick=doPickup;
+
+function mpReadLeaderboard(){
+  try{return JSON.parse(localStorage.getItem('shitheadLeaderboard')||'{}')}catch{return {}}
+}
+function mpRenderLeaderboard(){
+  const rows=Object.entries(mpReadLeaderboard()).sort((a,b)=>b[1]-a[1]);
+  const target=document.getElementById('mpLeaderRows');
+  if(!target)return;
+  target.innerHTML=rows.length
+    ? rows.map(([n,w],i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)"><span>${i+1}. ${n}</span><strong>${w}</strong></div>`).join('')
+    : '<p>No wins recorded yet.</p>';
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  const helpBtn=document.getElementById('mpHelpBtn');
+  const leaderBtn=document.getElementById('mpLeaderBtn');
+  const helpModal=document.getElementById('mpHelpModal');
+  const leaderModal=document.getElementById('mpLeaderModal');
+  const helpClose=document.getElementById('mpHelpClose');
+  const leaderClose=document.getElementById('mpLeaderClose');
+
+  if(helpBtn && helpModal) helpBtn.onclick=()=>helpModal.classList.add('open');
+  if(leaderBtn && leaderModal) leaderBtn.onclick=()=>{mpRenderLeaderboard();leaderModal.classList.add('open')};
+  if(helpClose && helpModal) helpClose.onclick=()=>helpModal.classList.remove('open');
+  if(leaderClose && leaderModal) leaderClose.onclick=()=>leaderModal.classList.remove('open');
+  if(helpModal) helpModal.onclick=e=>{if(e.target===helpModal)helpModal.classList.remove('open')};
+  if(leaderModal) leaderModal.onclick=e=>{if(e.target===leaderModal)leaderModal.classList.remove('open')};
+});
+
 </script>
 
 
