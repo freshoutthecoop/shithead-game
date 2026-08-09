@@ -90,6 +90,12 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
   h1{font-size:19px;margin:2px 0 4px}
   .panel{padding:7px !important;margin:5px 0 !important}
 }
+
+.difficultyBox{margin:8px 0}
+.difficultyChoices{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:5px}
+.diffBtn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:9px;padding:8px 5px;font-weight:900;cursor:pointer}
+.diffBtn.active{background:#ffd166;color:#29220d;border-color:#ffd166}
+.diffHelp{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.3}
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -142,8 +148,37 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const suits=['♥','♦','♣','♠'];
 const value={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14,JOKER:15};
+let difficulty='medium';
 let G=null, selectedSetup=null, selectedPlay=[];
 const $=id=>document.getElementById(id);
+
+
+function aiRankScore(card){
+  const v=(typeof value!=='undefined'?value:(typeof val!=='undefined'?val:{}));
+  const base=v[card.rank]??0;
+  // Hard AI preserves flexible/powerful cards unless strategically useful.
+  const specialPenalty={
+    '2':18,'4':15,'7':7,'8':12,'10':20,'JOKER':22
+  }[card.rank]||0;
+  return base-specialPenalty;
+}
+function chooseByDifficulty(legalCards){
+  if(!legalCards||!legalCards.length)return null;
+  if(difficulty==='easy'){
+    return legalCards[Math.floor(Math.random()*legalCards.length)];
+  }
+  if(difficulty==='hard'){
+    const groups={};
+    legalCards.forEach(c=>(groups[c.rank]??=[]).push(c));
+    const ranked=Object.values(groups).sort((a,b)=>{
+      // Prefer shedding multiples, then ordinary lower-value cards, while conserving magic cards.
+      const multi=(b.length-a.length)*12;
+      return multi + (aiRankScore(a[0])-aiRankScore(b[0]));
+    });
+    return ranked[0][0];
+  }
+  return null; // medium falls through to the game's existing chooser
+}
 
 function makeDeck(nPlayers){
   const decks=Math.ceil(nPlayers/3), d=[];
@@ -407,6 +442,21 @@ function render(){
 }
 $('newGame').onclick=()=>deal(parseInt($('playerCount').value));
 $('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);
+
+function setDifficulty(d){
+  difficulty=d;
+  document.querySelectorAll('.diffBtn').forEach(b=>b.classList.toggle('active',b.dataset.diff===d));
+  const help=document.getElementById('diffHelp');
+  if(help){
+    help.textContent=d==='easy'
+      ? 'Easy: mostly random legal plays and little special-card planning.'
+      : d==='hard'
+      ? 'Hard: strategic card choice, smarter multiples, and better special-card conservation.'
+      : 'Medium: balanced AI using the current strategy.';
+  }
+}
+document.querySelectorAll('.diffBtn').forEach(b=>b.addEventListener('click',()=>setDifficulty(b.dataset.diff)));
+
 </script>
 </body>
 </html>

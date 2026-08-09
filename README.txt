@@ -1,12 +1,14 @@
-Shithead v37
+Shithead v38
 
-Compact visual redesign based on the approved preview:
-- Opponents shown as narrow horizontal strips.
-- Center pile area emphasizes the current play requirement (e.g. 9+ or ≤7).
-- Face-up and face-down cards are much smaller.
-- Your hand is an overlapping horizontal card tray.
-- Large hands scroll horizontally instead of making the page taller.
-- Play and Pick Up stay directly under the hand.
-- Chat and Turn History are collapsed by default and expand when tapped.
-- Existing Firebase multiplayer, auth, leaderboard, chat notifications, turn history,
-  rematch, sorted hands, app icon, Joker styling, and card rules are preserved.
+Single-player difficulty levels:
+- Easy: AI uses mostly random legal card selection and makes weaker strategic choices.
+- Medium: preserves the existing balanced AI behavior.
+- Hard: AI prioritizes shedding useful multiples and makes more deliberate choices while conserving powerful special cards.
+- Difficulty is selected on the single-player setup screen before starting.
+
+No difficulty cheats:
+- Same deck and deal rules.
+- AI does not see hidden face-down cards.
+- AI does not receive better cards.
+
+Keeps the v37 compact layout and all multiplayer features/rules.
