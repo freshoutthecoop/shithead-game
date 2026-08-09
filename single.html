@@ -196,6 +196,21 @@ function legal(c){
 function drawUp(p){while(G.draw.length&&p.hand.length<3)p.hand.push(G.draw.pop());p.hand=sortCards(p.hand)}
 function checkFinish(i){const p=G.players[i];if(!G.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;G.winnerOrder.push(i);G.message+=` ${p.name} is out!`}}
 function activeCount(){return G.players.filter(p=>!p.finished).length}
+function skipAdvance(skipCount){
+  const active=G.players.filter(p=>!p.finished);
+  if(active.length<=1)return;
+
+  // House rule: with exactly 2 active players, any 8 skips the sole opponent,
+  // so the current player keeps the turn.
+  if(active.length===2){
+    return;
+  }
+
+  // With 3+ active players, skip skipCount successive opponents,
+  // then move to the next active player.
+  for(let k=0;k<skipCount;k++)advance(1);
+  advance(1);
+}
 function advance(steps){for(let s=0;s<steps;s++){let tries=0;do{G.current=(G.current+G.direction+G.players.length)%G.players.length;tries++}while(G.players[G.current].finished&&tries<=G.players.length)}}
 function playCards(i,cards){
   if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0]))return false;
@@ -232,7 +247,7 @@ function playCards(i,cards){
         drawUp(p);
         checkFinish(i);
         G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8 and repeated the skip.`;
-        advance(cards.length+1);
+        skipAdvance(cards.length);
         render();
         maybeAITurn();
         return true;
@@ -267,7 +282,7 @@ function playCards(i,cards){
     drawUp(p);
     checkFinish(i);
     G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`;
-    advance(cards.length+1);
+    skipAdvance(cards.length);
     render();
     maybeAITurn();
     return true;

@@ -1,13 +1,11 @@
-Shithead v33
+Shithead v35
 
-New multiplayer rematch flow:
-- When a multiplayer game ends, each player sees a Play Again button.
-- A player who taps it is marked Ready.
-- The status shows how many players are ready.
-- When every player in the room selects Play Again, the host automatically starts a fresh setup/deal.
-- Same room and usernames are preserved.
-- Chat remains in the same room.
-- Turn history is reset for the rematch.
-- No new room code is needed.
+8 rule clarified:
+- Each 8 skips one other player.
+- In a 2-player game, there is only one other player, so ANY number of 8s means the person who played them goes again.
+- One 8 in a 2-player game -> same player again.
+- Two 8s in a 2-player game -> same player again.
+- A 4 replaying an 8 in a 2-player game -> same player again.
+- With 3+ active players, stacked 8s skip that many successive opponents, then play continues to the next player.
 
-All v32 rules and features remain.
+All v34/v33 features remain.

@@ -88,7 +88,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v33 · rematch</div>
+<div class="small">Firebase multiplayer v35 · two-player 8 rule</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -461,6 +461,29 @@ function consecutive(rank,g){
 }
 function drawUp(p,g){p.hand=p.hand||[];g.draw=g.draw||[];while(g.draw.length&&p.hand.length<3)p.hand.push(g.draw.pop());p.hand=sortCards(p.hand)}
 function activePlayers(players){return players.filter(p=>!p.finished)}
+function skipAdvance(g,players,skipCount){
+  const active=players.filter(p=>!p.finished);
+  if(active.length<=1)return;
+
+  // House rule: in a 2-player game, any 8 play skips the only opponent,
+  // so the player who played the 8(s) immediately gets another turn.
+  if(active.length===2){
+    return;
+  }
+
+  // With 3+ active players, skip exactly skipCount successive opponents,
+  // then land on the next active player.
+  let skipped=0;
+  while(skipped<skipCount){
+    do{
+      g.current=(g.current+g.direction+players.length)%players.length;
+    }while(players[g.current].finished);
+    skipped++;
+  }
+  do{
+    g.current=(g.current+g.direction+players.length)%players.length;
+  }while(players[g.current].finished);
+}
 function advance(g,players,n){
   for(let x=0;x<n;x++){let guard=0;do{g.current=(g.current+g.direction+players.length)%players.length;guard++}while(players[g.current].finished&&guard<=players.length)}
 }
@@ -565,7 +588,7 @@ async function playSelected(){
           g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8 and repeated the skip.`;
           addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8, repeating the skip ${cards.length} time${cards.length===1?'':'s'}.`,'skip');
           finishCheck(cur,players,i);
-          if(cur.phase==='play')advance(g,players,cards.length+1);
+          if(cur.phase==='play')skipAdvance(g,players,cards.length);
           cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
           return cur;
         }
@@ -607,7 +630,7 @@ async function playSelected(){
       g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8.`;
       addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`,'skip');
       finishCheck(cur,players,i);
-      if(cur.phase==='play')advance(g,players,cards.length+1);
+      if(cur.phase==='play')skipAdvance(g,players,cards.length);
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
       return cur;
     }
@@ -695,7 +718,7 @@ async function playDown(id){
           g.message=`${p.name} blindly flipped a 4 on an 8 and repeated the skip.`;
           addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on an 8, repeating the skip.`,'skip');
           finishCheck(cur,players,i);
-          if(cur.phase==='play')advance(g,players,2);
+          if(cur.phase==='play')skipAdvance(g,players,1);
           cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
           return cur;
         }
@@ -729,7 +752,7 @@ async function playDown(id){
       g.message=`${p.name} flipped an 8.`;
       addHistoryToRoom(cur,`${p.name} blindly flipped an 8 and skipped the next player.`,'skip');
       finishCheck(cur,players,i);
-      if(cur.phase==='play')advance(g,players,2);
+      if(cur.phase==='play')skipAdvance(g,players,1);
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
       return cur;
     }
