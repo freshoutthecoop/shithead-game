@@ -257,7 +257,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .historyBox > .small:first-child::after{content:'▾';float:right}
 .historyBox.open > .small:first-child::after{content:'▴'}
 
-/* v51: slightly larger opponent cards */
+/* v53: slightly larger opponent cards */
 #opponents .card{
   width:25px !important;
   height:35px !important;
@@ -269,7 +269,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 #opponents .suit{font-size:10px !important}
 #opponents .cards{gap:2px !important}
 
-/* v51 Joker: black/white reverse card */
+/* v53 Joker: black/white reverse card */
 .card.joker{
   background:#fff !important;
   color:#111 !important;
@@ -306,7 +306,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 #topCard .card.joker .suit::after{font-size:30px !important}
 
 
-/* v51: identical opponent strip layout in single + multiplayer */
+/* v53: identical opponent strip layout in single + multiplayer */
 #opponents{
   width:100% !important;
   display:flex !important;
@@ -384,7 +384,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 }
 
 
-/* v51 unified single/multiplayer game board */
+/* v53 unified single/multiplayer game board */
 .gameShell{
   display:flex;
   flex-direction:column;
@@ -492,7 +492,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
   box-shadow:0 0 0 2px rgba(255,209,102,.22) !important;
 }
 
-/* v51: single-player opponents fixed at top, matching multiplayer */
+/* v53: single-player opponents fixed at top, matching multiplayer */
 #game{
   display:flex !important;
   flex-direction:column !important;
@@ -508,6 +508,43 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 /* keep Computer 1 and Computer 2 stacked in stable seat order */
 #opponents .player:nth-child(1){order:1 !important}
 #opponents .player:nth-child(2){order:2 !important}
+
+
+/* v53: iPhone notch / Dynamic Island / Home indicator safe areas */
+html{
+  background:#0f5132;
+}
+body{
+  padding-top:env(safe-area-inset-top, 0px) !important;
+  padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+  padding-left:env(safe-area-inset-left, 0px) !important;
+  padding-right:env(safe-area-inset-right, 0px) !important;
+  min-height:100dvh !important;
+}
+.wrap{
+  padding-top:max(8px, env(safe-area-inset-top, 0px)) !important;
+  padding-bottom:max(12px, env(safe-area-inset-bottom, 0px)) !important;
+}
+@media(max-width:650px){
+  .wrap{
+    padding-top:max(8px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom:max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-left:max(6px, env(safe-area-inset-left, 0px)) !important;
+    padding-right:max(6px, env(safe-area-inset-right, 0px)) !important;
+  }
+}
+/* Keep temporary overlays below the Dynamic Island too */
+.chatToast{
+  top:max(14px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+}
+.blindReveal{
+  padding-top:env(safe-area-inset-top, 0px) !important;
+  padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+}
+.modalBack{
+  padding-top:max(22px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+  padding-bottom:max(22px, calc(env(safe-area-inset-bottom, 0px) + 12px)) !important;
+}
 
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">

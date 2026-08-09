@@ -1,11 +1,93 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shithead</title>
 <style>
 body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(#0f5132,#0b3d28);color:white;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px}
 .wrap{width:min(92vw,520px)}a{display:block;text-decoration:none;padding:18px;border-radius:16px;margin:12px 0;font-weight:800;font-size:22px}.single{background:#ffd166;color:#29220d}.multi{background:rgba(255,255,255,.12);color:white;border:1px solid rgba(255,255,255,.18)}p{font-size:14px;font-weight:400;margin:5px 0 0}
+
+/* v52: iPhone notch / Dynamic Island / Home indicator safe areas */
+html{
+  background:#0f5132;
+}
+body{
+  padding-top:env(safe-area-inset-top, 0px) !important;
+  padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+  padding-left:env(safe-area-inset-left, 0px) !important;
+  padding-right:env(safe-area-inset-right, 0px) !important;
+  min-height:100dvh !important;
+}
+.wrap{
+  padding-top:max(8px, env(safe-area-inset-top, 0px)) !important;
+  padding-bottom:max(12px, env(safe-area-inset-bottom, 0px)) !important;
+}
+@media(max-width:650px){
+  .wrap{
+    padding-top:max(8px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom:max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-left:max(6px, env(safe-area-inset-left, 0px)) !important;
+    padding-right:max(6px, env(safe-area-inset-right, 0px)) !important;
+  }
+}
+/* Keep temporary overlays below the Dynamic Island too */
+.chatToast{
+  top:max(14px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+}
+.blindReveal{
+  padding-top:env(safe-area-inset-top, 0px) !important;
+  padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+}
+.modalBack{
+  padding-top:max(22px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+  padding-bottom:max(22px, calc(env(safe-area-inset-bottom, 0px) + 12px)) !important;
+}
+
+
+.helpBtn{
+  display:block;
+  width:100%;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  padding:14px;
+  border-radius:14px;
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:12px;
+}
+.modalBack{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.72);
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  padding:22px 12px;
+  overflow:auto;
+  z-index:10000;
+}
+.modalBack.open{display:flex}
+.modal{
+  width:100%;
+  max-width:640px;
+  background:#123f2d;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:16px;
+  padding:16px;
+  color:#fff;
+}
+.modal h2{margin-top:0}
+.modal p,.modal li{line-height:1.45}
+.modal .closeBtn{
+  float:right;
+  border:0;
+  border-radius:9px;
+  padding:8px 10px;
+  font-weight:900;
+  cursor:pointer;
+}
 </style>
 <link rel="manifest" href="manifest.webmanifest?v=29">
 <link rel="icon" type="image/png" href="favicon.png?v=29">
@@ -14,7 +96,47 @@ body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:c
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Shithead">
 </head>
-<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v51</div>
-<a class="single" href="single.html?clean=51">Single Player<p>Working baseline, unchanged.</p></a>
-<a class="multi" href="multiplayer.html?v=51">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
-</div></body></html>
+<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v53</div>
+<a class="single" href="single.html?clean=53">Single Player<p>Working baseline, unchanged.</p></a>
+<a class="multi" href="multiplayer.html?v=53">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
+<button id="mainHelpBtn" class="helpBtn" type="button">How to Play</button>
+</div>
+<div id="mainHelpModal" class="modalBack">
+  <div class="modal">
+    <button id="mainHelpClose" class="closeBtn" type="button">Close</button>
+    <h2>How to Play Shithead</h2>
+    <p>Each player starts with 3 face-down cards, 3 face-up cards, and 3 cards in hand. Before play starts, you may swap cards between your hand and face-up cards. The goal is to get rid of all your cards. The last player with cards is the Shithead.</p>
+
+    <h3>Basic play</h3>
+    <p>Play a card of the same rank or higher than the current effective card. You may play multiple cards of the same rank together. If you cannot play, pick up the pile.</p>
+
+    <h3>Special cards</h3>
+    <ul>
+      <li><strong>2:</strong> resets the count.</li>
+      <li><strong>4:</strong> transparent and replays the effect of the card underneath it.</li>
+      <li><strong>7:</strong> the next player must play 7 or lower.</li>
+      <li><strong>8:</strong> skips one other player per 8 played.</li>
+      <li><strong>10:</strong> clears the pile and you play again. It cannot be played on a 7.</li>
+      <li><strong>Joker:</strong> reverses direction and is transparent for the numerical requirement.</li>
+    </ul>
+
+    <h3>Four of a kind</h3>
+    <p>Four of any rank in a row clears the pile and the player who completes it plays again. Transparent 4s do not interrupt a run of another rank.</p>
+
+    <h3>Drawing and endgame</h3>
+    <p>While the draw pile remains, draw back up to 3 cards after your turn. Once the draw pile is gone and your hand is empty, play your face-up cards. After those are gone, blind-flip your face-down cards one at a time.</p>
+
+    <h3>Walkthrough mode</h3>
+    <p>Walkthrough can be toggled on to highlight cards that are legal to play. Face-down cards are never revealed by the walkthrough.</p>
+  </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded',()=>{
+  const modal=document.getElementById('mainHelpModal');
+  document.getElementById('mainHelpBtn')?.addEventListener('click',()=>modal?.classList.add('open'));
+  document.getElementById('mainHelpClose')?.addEventListener('click',()=>modal?.classList.remove('open'));
+  modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
+});
+</script>
+</body></html>

@@ -1,9 +1,10 @@
-Shithead v51
+Shithead v53
 
-Single-player layout fix:
-- Computer 1 and Computer 2 are now at the very top of the gameplay screen.
-- Their placement matches the opponent area in multiplayer.
-- Computer 1 stays above Computer 2 in a stable order.
-- Opponent card sizing/alignment remains the same in both modes.
+Main page update:
+- Added a How to Play button directly on the main mode-selection page.
+- Opens a full rules modal with setup, basic play, special cards, four-of-a-kind,
+  drawing/endgame, and walkthrough guidance.
+- Modal can be closed with the Close button or by tapping outside it.
+- iPhone safe-area behavior remains intact.
 
-All v50 features remain, including dual global leaderboards.
+All v52 gameplay/features remain unchanged.
