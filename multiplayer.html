@@ -59,7 +59,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v27 · chat + turn history</div>
+<div class="small">Firebase multiplayer v28 · transparent Joker</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -382,7 +382,12 @@ async function ready(){
   });
 }
 
-function meaningfulTop(g){for(let i=(g.pile||[]).length-1;i>=0;i--)if(g.pile[i].rank!=='4')return g.pile[i];return null}
+function meaningfulTop(g){
+  for(let i=(g.pile||[]).length-1;i>=0;i--){
+    if(g.pile[i].rank!=='4' && g.pile[i].rank!=='JOKER')return g.pile[i];
+  }
+  return null;
+}
 function magic(c){return ['2','4','10','JOKER'].includes(c.rank)}
 function legal(c,g){
   const top=meaningfulTop(g);if(!top)return true;
@@ -526,7 +531,7 @@ async function playSelected(){
 
     if(rank==='2')g.mustLow=false;
     else if(rank==='7')g.mustLow=true;
-    else if(rank==='4'){}
+    else if(rank==='4'||rank==='JOKER'){}
     else g.mustLow=false;
 
     if(clear){
@@ -612,7 +617,7 @@ async function playDown(id){
     let clear=rank==='10',same=rank==='10';
     if(rank==='2')g.mustLow=false;
     else if(rank==='7')g.mustLow=true;
-    else if(rank==='4'){}
+    else if(rank==='4'||rank==='JOKER'){}
     else g.mustLow=false;
 
     if(clear){

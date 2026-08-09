@@ -1,8 +1,13 @@
-Shithead v27
+Shithead v28
 
-New:
-- Shared multiplayer Turn History stored in Firebase with the room.
-- History records normal plays, special cards, clears, pickups, blind flips,
-  reversals, skips, players going out, and the final Shithead.
-- All players see the same history live.
-- Keeps v26 chat and universal four-of-a-kind clear rule.
+Joker rule fix:
+- Joker reverses direction but is transparent for the next card's legality.
+- 5 -> Joker means the next player must still play 5 or higher.
+- 7 -> Joker means the next player must still play 7 or lower.
+- 9 -> Joker -> 4 still means 9 or higher.
+- 7 -> Joker -> 4 still means 7 or lower.
+- Multiple Jokers reverse direction once per Joker but do not change the underlying numerical requirement.
+- Four Jokers still count as four-of-a-kind, clear the pile, and let the same player go again.
+
+Keeps Firebase multiplayer, anonymous authentication, global leaderboard, chat,
+turn history, sorted hands, and universal four-of-a-kind clearing.

@@ -130,7 +130,12 @@ function startGame(){
   else{let best={v:99,i:0};G.players.forEach((p,i)=>p.hand.forEach(c=>{let v=value[c.rank]??15;if(v<best.v)best={v,i}}));G.current=best.i}
   G.message=`${G.players[G.current].name} goes first.`;render();maybeAITurn();
 }
-function meaningfulTop(){for(let i=G.pile.length-1;i>=0;i--)if(G.pile[i].rank!=='4')return G.pile[i];return null}
+function meaningfulTop(){
+  for(let i=G.pile.length-1;i>=0;i--){
+    if(G.pile[i].rank!=='4' && G.pile[i].rank!=='JOKER')return G.pile[i];
+  }
+  return null;
+}
 function consecutiveCount(rank){
   let n=0;
   if(rank==='4'){
@@ -203,7 +208,7 @@ function playCards(i,cards){
 
   if(rank==='2')G.mustLow=false;
   else if(rank==='7')G.mustLow=true;
-  else if(rank==='4'){}
+  else if(rank==='4'||rank==='JOKER'){}
   else G.mustLow=false;
 
   if(clear){
