@@ -96,6 +96,157 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .diffBtn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:9px;padding:8px 5px;font-weight:900;cursor:pointer}
 .diffBtn.active{background:#ffd166;color:#29220d;border-color:#ffd166}
 .diffHelp{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.3}
+
+/* v39: single-player board matches multiplayer visual hierarchy */
+#game{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:6px !important;
+}
+#opponents{
+  order:1;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:3px !important;
+}
+#opponents .player{
+  display:grid !important;
+  grid-template-columns:minmax(78px,1fr) auto auto minmax(74px,auto) !important;
+  align-items:center !important;
+  gap:5px !important;
+  padding:4px 6px !important;
+  min-height:36px !important;
+  border-radius:8px !important;
+}
+#opponents .player.active{
+  border-color:#ffd166 !important;
+  background:rgba(255,209,102,.12) !important;
+}
+#opponents .name{font-size:12px !important;font-weight:900 !important}
+#opponents .small{font-size:9px !important}
+#opponents .cards{
+  gap:1px !important;
+  flex-wrap:nowrap !important;
+  justify-content:flex-end !important;
+}
+#opponents .card{
+  width:19px !important;height:27px !important;
+  min-width:19px !important;
+  padding:1px !important;border-width:1px !important;
+}
+#opponents .rank,#opponents .suit{font-size:8px !important}
+
+.pile{
+  order:2 !important;
+  padding:6px 9px !important;
+  min-height:72px !important;
+  border-radius:10px !important;
+}
+#topCard .card{
+  width:46px !important;height:64px !important;
+  min-width:46px !important;padding:3px !important;
+}
+#topCard .rank{font-size:15px !important}
+#topCard .suit{font-size:16px !important}
+
+#status{
+  padding:6px 8px !important;
+  background:rgba(255,255,255,.08) !important;
+  border-radius:8px !important;
+  font-size:12px !important;
+  margin:0 0 5px !important;
+}
+
+#yourFace,#yourDown{
+  display:flex !important;
+  gap:3px !important;
+  flex-wrap:nowrap !important;
+  margin:3px 0 6px !important;
+}
+#yourFace .card,#yourDown .card{
+  width:31px !important;height:43px !important;
+  min-width:31px !important;
+  padding:2px !important;border-radius:5px !important;
+}
+#yourFace .rank,#yourDown .rank{font-size:10px !important}
+#yourFace .suit,#yourDown .suit{font-size:11px !important}
+
+#yourHand{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:visible !important;
+  align-items:flex-end !important;
+  min-height:80px !important;
+  margin:4px 0 8px !important;
+  padding:5px 8px 8px 2px !important;
+}
+#yourHand .card{
+  width:52px !important;height:72px !important;
+  min-width:52px !important;
+  flex:0 0 auto !important;
+  margin-left:-18px !important;
+  position:relative !important;
+  z-index:1;
+}
+#yourHand .card:first-child{margin-left:0 !important}
+#yourHand .card.selected{transform:translateY(-7px) !important;z-index:30 !important}
+#yourHand .rank{font-size:15px !important}
+#yourHand .suit{font-size:17px !important}
+
+#playBtn,#pickupBtn{
+  padding:9px 8px !important;
+  font-size:14px !important;
+}
+@media(max-width:650px){
+  .wrap{padding:6px !important}
+  h1{font-size:19px !important;margin:2px 0 4px !important}
+  .panel{padding:7px !important;margin:5px 0 !important}
+}
+
+
+.card.playableHint{
+  outline:3px solid #7CFC98 !important;
+  box-shadow:0 0 0 2px rgba(124,252,152,.25),0 2px 6px rgba(0,0,0,.2) !important;
+}
+.walkHintText{font-size:10px;color:#dfffe7;margin-top:4px}
+
+/* v41 Joker: recognizable playing-card face */
+.card.joker{
+  background:#fff !important;
+  color:#6a1b9a !important;
+  border:2px solid #6a1b9a !important;
+  position:relative;
+  overflow:hidden;
+}
+.card.joker .rank{
+  font-size:10px !important;
+  font-weight:1000 !important;
+  letter-spacing:-.4px;
+  align-self:flex-start;
+}
+.card.joker .suit{
+  font-size:0 !important;
+  align-self:center !important;
+}
+.card.joker .suit::after{
+  content:'🤡';
+  font-size:28px;
+  line-height:1;
+  display:block;
+  filter:saturate(1.15);
+}
+#yourHand .card.joker .rank{font-size:10px !important}
+#yourHand .card.joker .suit::after{font-size:31px}
+#yourFace .card.joker .rank,
+#yourDown .card.joker .rank{font-size:7px !important}
+#yourFace .card.joker .suit::after,
+#yourDown .card.joker .suit::after{font-size:17px}
+#opponents .card.joker .rank{font-size:5px !important}
+#opponents .card.joker .suit::after{font-size:10px}
+#topCard .card.joker .rank{font-size:9px !important}
+#topCard .card.joker .suit::after{font-size:28px}
+
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -149,6 +300,7 @@ const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const suits=['♥','♦','♣','♠'];
 const value={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14,JOKER:15};
 let difficulty='medium';
+let walkthroughOn=false;
 let G=null, selectedSetup=null, selectedPlay=[];
 const $=id=>document.getElementById(id);
 
@@ -191,7 +343,7 @@ function makeDeck(nPlayers){
 }
 function cardHTML(c,opts={}){
   const red=c.suit==='♥'||c.suit==='♦', txt=c.rank==='JOKER'?'🃏':c.rank;
-  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!opts.back?'joker':''} ${opts.back?'back':''} ${opts.cls||''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':(c.rank==='JOKER'?'JOKER':txt)}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'★':c.suit)}</span></div>`;
+  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!opts.back?'joker':''} ${opts.back?'back':''} ${opts.cls||''} ${opts.playableHint?'playableHint':''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':(c.rank==='JOKER'?'JOKER':txt)}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
 }
 function sortCards(cards){
   const suitOrder={'♥':0,'♦':1,'♣':2,'♠':3,'':4};
@@ -246,6 +398,12 @@ function replayTarget(){
     if(G.pile[i].rank!=='4')return G.pile[i];
   }
   return null;
+}
+function currentRequirement(){
+  const top=meaningfulTop();
+  if(!top)return 'ANY';
+  if(top.rank==='7')return '≤7';
+  return top.rank+'+';
 }
 function meaningfulTop(){
   for(let i=G.pile.length-1;i>=0;i--){
@@ -426,15 +584,21 @@ function toggleSelect(id){
   if(selectedPlay.length){const first=arr.find(x=>x.id===selectedPlay[0]);if(first&&first.rank!==c.rank)selectedPlay=[]}
   selectedPlay=selectedPlay.includes(id)?selectedPlay.filter(x=>x!==id):[...selectedPlay,id];render();
 }
+
+function singleHintPlayable(card,p,zone){
+  if(!walkthroughOn||G.phase!=='play'||G.current!==0)return false;
+  if(zone==='down')return false;
+  return legal(card);
+}
 function render(){
   const p=G.players[0];
   $('opponents').innerHTML=G.players.slice(1).map((q,idx)=>`<div class="player ${G.current===idx+1?'active':''} ${q.finished?'finished':''}"><div style="font-weight:800">${q.name}${q.finished?' ✓':''}</div><div class="small">Hand: ${q.hand.length}</div><div class="cards" style="margin-top:5px">${q.face.map(c=>cardHTML(c)).join('')}</div><div class="small">Face-down: ${q.down.length}</div></div>`).join('');
-  $('drawCount').textContent=G.draw.length;$('pileCount').textContent=`Pile: ${G.pile.length} card${G.pile.length===1?'':'s'}`;$('direction').textContent=G.direction===1?'↻':'↺';
+  $('drawCount').textContent=G.draw.length;$('pileCount').textContent=`Pile: ${G.pile.length} card${G.pile.length===1?'':'s'}`;$('direction').innerHTML=`<div style="font-size:9px;color:var(--muted);font-weight:800">PLAY</div><div style="font-size:20px;font-weight:900;color:var(--accent)">${currentRequirement()}</div><div style="font-size:10px;color:var(--muted)">${G.direction===1?'↻':'↺'}</div>`;
   const top=G.pile[G.pile.length-1];$('topCard').innerHTML=top?cardHTML(top,{cls:'pileCard'}):'<div class="small">Empty pile</div>';
-  $('status').textContent=G.message+(G.phase==='play'&&G.current===0?' Your turn.':'');
-  $('yourFace').innerHTML=p.face.map(c=>cardHTML(c,{cls:availableZone(p)==='face'&&G.current===0?'selectable':''})).join('');
+  $('status').innerHTML=(G.message+(G.phase==='play'&&G.current===0?' Your turn.':''))+(walkthroughOn&&G.phase==='play'&&G.current===0?'<div class=\"walkHintText\">Green outline = playable now.</div>':'');
+  $('yourFace').innerHTML=sortCards(p.face).map(c=>cardHTML(c,{cls:availableZone(p)==='face'&&G.current===0?'selectable':'',playableHint:availableZone(p)==='face'&&singleHintPlayable(c,p,'face')})).join('');
   $('yourDown').innerHTML=p.down.map(c=>cardHTML(c,{back:true,cls:availableZone(p)==='down'&&G.current===0?'selectable':''})).join('');
-  $('yourHand').innerHTML=sortCards(p.hand).map(c=>cardHTML(c,{cls:availableZone(p)==='hand'&&G.current===0?'selectable':''})).join('');
+  $('yourHand').innerHTML=sortCards(p.hand).map(c=>cardHTML(c,{cls:availableZone(p)==='hand'&&G.current===0?'selectable':'',playableHint:availableZone(p)==='hand'&&singleHintPlayable(c,p,'hand')})).join('');
   document.querySelectorAll('#yourHand .card,#yourFace .card').forEach(el=>{el.onclick=()=>toggleSelect(el.dataset.id);el.classList.toggle('selected',selectedPlay.includes(el.dataset.id))});
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>humanDown(el.dataset.id));
   const z=availableZone(p);$('playBtn').disabled=G.current!==0||G.phase!=='play'||z==='down'||selectedPlay.length===0;
@@ -456,6 +620,13 @@ function setDifficulty(d){
   }
 }
 document.querySelectorAll('.diffBtn').forEach(b=>b.addEventListener('click',()=>setDifficulty(b.dataset.diff)));
+
+
+document.getElementById('walkBtn')?.addEventListener('click',()=>{
+  walkthroughOn=!walkthroughOn;
+  document.getElementById('walkBtn').textContent=`Walkthrough: ${walkthroughOn?'On':'Off'}`;
+  if(typeof render==='function' && typeof G!=='undefined' && G)render();
+});
 
 </script>
 </body>

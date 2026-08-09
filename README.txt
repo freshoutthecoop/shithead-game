@@ -1,14 +1,11 @@
-Shithead v38
+Shithead v41
 
-Single-player difficulty levels:
-- Easy: AI uses mostly random legal card selection and makes weaker strategic choices.
-- Medium: preserves the existing balanced AI behavior.
-- Hard: AI prioritizes shedding useful multiples and makes more deliberate choices while conserving powerful special cards.
-- Difficulty is selected on the single-player setup screen before starting.
+Joker visual redesign:
+- Joker now looks like a recognizable playing card.
+- White card face with purple border.
+- JOKER label in the corner.
+- Large clown head in the center instead of a suit/star.
+- Scales down appropriately in opponent strips and face-up card rows.
 
-No difficulty cheats:
-- Same deck and deal rules.
-- AI does not see hidden face-down cards.
-- AI does not receive better cards.
-
-Keeps the v37 compact layout and all multiplayer features/rules.
+All v40 walkthrough, difficulty, multiplayer, layout, chat, leaderboard,
+rematch, notification, app-icon, and gameplay-rule features remain.

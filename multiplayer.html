@@ -243,6 +243,53 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
   .topActions{margin-bottom:4px}
   .topActions .btn{padding:7px 9px;font-size:12px}
 }
+
+.card.playableHint{
+  outline:3px solid #7CFC98 !important;
+  box-shadow:0 0 0 2px rgba(124,252,152,.25),0 2px 6px rgba(0,0,0,.2) !important;
+}
+.walkHintText{
+  font-size:10px;
+  color:#dfffe7;
+  margin-top:4px;
+}
+
+/* v41 Joker: recognizable playing-card face */
+.card.joker{
+  background:#fff !important;
+  color:#6a1b9a !important;
+  border:2px solid #6a1b9a !important;
+  position:relative;
+  overflow:hidden;
+}
+.card.joker .rank{
+  font-size:10px !important;
+  font-weight:1000 !important;
+  letter-spacing:-.4px;
+  align-self:flex-start;
+}
+.card.joker .suit{
+  font-size:0 !important;
+  align-self:center !important;
+}
+.card.joker .suit::after{
+  content:'🤡';
+  font-size:28px;
+  line-height:1;
+  display:block;
+  filter:saturate(1.15);
+}
+#yourHand .card.joker .rank{font-size:10px !important}
+#yourHand .card.joker .suit::after{font-size:31px}
+#yourFace .card.joker .rank,
+#yourDown .card.joker .rank{font-size:7px !important}
+#yourFace .card.joker .suit::after,
+#yourDown .card.joker .suit::after{font-size:17px}
+#opponents .card.joker .rank{font-size:5px !important}
+#opponents .card.joker .suit::after{font-size:10px}
+#topCard .card.joker .rank{font-size:9px !important}
+#topCard .card.joker .suit::after{font-size:28px}
+
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -256,7 +303,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v37 · compact layout</div>
+<div class="small">Firebase multiplayer v41 · walkthrough toggle</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -414,6 +461,7 @@ const $=id=>document.getElementById(id);
 
 let roomCode='', myId='', isHost=false, roomRef=null, room=null;
 let selectedSetup=null, selectedPlay=[];
+let walkthroughOn=false;
 
 function setMsg(s){$('connectMsg').textContent=s}
 function username(){
@@ -430,7 +478,7 @@ function showOnly(id){['home','lobby','setup','game'].forEach(x=>x===id?show(x):
 function sortCards(a){const so={'♥':0,'♦':1,'♣':2,'♠':3,'':4};return [...(a||[])].sort((x,y)=>(val[x.rank]-val[y.rank])||((so[x.suit]??9)-(so[y.suit]??9)))}
 function cardHTML(c,o={}){
   const red=c.suit==='♥'||c.suit==='♦', text=c.rank==='JOKER'?'🃏':c.rank;
-  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!o.back?'joker':''} ${o.back?'back':''} ${o.selectable?'selectable':''}" data-id="${c.id||''}"><span class="rank">${o.back?'':(c.rank==='JOKER'?'JOKER':text)}</span><span class="suit">${o.back?'':(c.rank==='JOKER'?'★':c.suit)}</span></div>`;
+  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!o.back?'joker':''} ${o.back?'back':''} ${o.selectable?'selectable':''} ${o.playableHint?'playableHint':''}" data-id="${c.id||''}"><span class="rank">${o.back?'':(c.rank==='JOKER'?'JOKER':text)}</span><span class="suit">${o.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
 }
 function normalizePlayers(obj){
   if(!obj)return [];
@@ -696,6 +744,16 @@ function currentRequirement(g){
   if(top.rank==='7')return '≤7';
   return top.rank+'+';
 }
+
+function isPlayableHintCard(card,p,g,zone){
+  if(!walkthroughOn)return false;
+  if(room?.phase!=='play')return false;
+  const players=getPlayers();
+  const meIndex=players.findIndex(x=>x.id===myId);
+  if(g.current!==meIndex)return false;
+  if(zone==='down')return false; // face-down is blind; don't reveal legality
+  return legal(card,g);
+}
 function renderGame(){
   recordWinnerIfNeeded().catch(()=>{});
   const players=getPlayers(),p=me(),g=game();if(!p||!g)return;
@@ -714,11 +772,11 @@ function renderGame(){
   $('direction').innerHTML=`<div style="font-size:9px;color:var(--muted);font-weight:800">PLAY</div><div style="font-size:20px;font-weight:900;color:var(--accent)">${currentRequirement(g)}</div><div style="font-size:10px;color:var(--muted)">${g.direction===1?'↻':'↺'}</div>`;
   $('pileCount').textContent=`Pile ${(g.pile||[]).length}`;
   const top=(g.pile||[])[(g.pile||[]).length-1];$('topCard').innerHTML=top?cardHTML(top):'<div class="small">Empty</div>';
-  $('status').textContent=g.message+(room.phase==='play'&&g.current===meIndex?' Your turn.':'');
+  $('status').innerHTML=g.message+(room.phase==='play'&&g.current===meIndex?' Your turn.':'')+(walkthroughOn&&room.phase==='play'&&g.current===meIndex?'<div class="walkHintText">Green outline = playable now.</div>':'');
   const zone=activeZone(p,g);
-  $('yourFace').innerHTML=sortCards(p.face||[]).map(c=>cardHTML(c,{selectable:zone==='face'&&g.current===meIndex})).join('');
+  $('yourFace').innerHTML=sortCards(p.face||[]).map(c=>cardHTML(c,{selectable:zone==='face'&&g.current===meIndex,playableHint:zone==='face'&&isPlayableHintCard(c,p,g,zone)})).join('');
   $('yourDown').innerHTML=(p.down||[]).map(c=>cardHTML(c,{back:true,selectable:zone==='down'&&g.current===meIndex})).join('');
-  $('yourHand').innerHTML=sortCards(p.hand||[]).map(c=>cardHTML(c,{selectable:zone==='hand'&&g.current===meIndex})).join('');
+  $('yourHand').innerHTML=sortCards(p.hand||[]).map(c=>cardHTML(c,{selectable:zone==='hand'&&g.current===meIndex,playableHint:zone==='hand'&&isPlayableHintCard(c,p,g,zone)})).join('');
   document.querySelectorAll('#yourHand .card,#yourFace .card').forEach(el=>{el.onclick=()=>togglePlay(el.dataset.id);el.classList.toggle('selected',selectedPlay.includes(el.dataset.id))});
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>playDown(el.dataset.id));
   $('playBtn').disabled=room.phase!=='play'||g.current!==meIndex||zone==='down'||!selectedPlay.length;
@@ -1185,6 +1243,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('helpClose').onclick=()=>$('helpModal').classList.remove('open');
   $('helpModal').onclick=e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('open')};
   $('leaderBtn').onclick=()=>showLeaderboard().catch(e=>{$('leaderRows').textContent=e.message;$('leaderModal').classList.add('open')});
+  $('walkBtn').onclick=()=>{
+    walkthroughOn=!walkthroughOn;
+    $('walkBtn').textContent=`Walkthrough: ${walkthroughOn?'On':'Off'}`;
+    if(room?.phase==='play')renderGame();
+  };
   $('leaderClose').onclick=()=>$('leaderModal').classList.remove('open');
   $('leaderModal').onclick=e=>{if(e.target===$('leaderModal'))$('leaderModal').classList.remove('open')};
 });
