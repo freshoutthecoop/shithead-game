@@ -441,11 +441,33 @@ function handleHostMessage(conn,m){
   else if(m.type==='down') hostDownRequest(m.id,m.cardId);
 }
 function handleClientMessage(m){
-  if(m.type==='joined'){myId=m.id;lobby=m.lobby;openLobby()}
-  else if(m.type==='lobby'){lobby=m.lobby;renderLobby()}
-  else if(m.type==='view'){viewState=m.view; renderState()}
+  if(m.type==='joined'){
+    myId=m.id;
+    lobby=m.lobby;
+    openLobby();
+  }
+  else if(m.type==='lobby'){
+    lobby=m.lobby;
+    renderLobby();
+  }
+  else if(m.type==='view'){
+    viewState=m.view;
+    renderState();
+  }
+  else if(m.type==='game_started'){
+    viewState=m.view;
+    selectedSetup=null;
+    selectedPlay=[];
+    renderState();
+  }
 }
-function sendHost(m){hostConn?.send(m)}
+function sendHost(m){
+  if(hostConn && hostConn.open){
+    hostConn.send(m);
+  } else {
+    setConnectMsg('Connection to the host was lost.');
+  }
+}
 function broadcast(m){Object.values(conns).forEach(c=>c.open&&c.send(m))}
 
 function makeDeck(n){
@@ -468,27 +490,73 @@ function startDeal(){
   pushViews();
 }
 function hostSwap(id,aId,bId){
-  if(state?.phase!=='setup')return;const p=state.players.find(x=>x.id===id);if(!p||p.ready)return;
-  const ah=p.hand.findIndex(c=>c.id===aId), af=p.face.findIndex(c=>c.id===aId), bh=p.hand.findIndex(c=>c.id===bId), bf=p.face.findIndex(c=>c.id===bId);
-  if(ah>=0&&bf>=0)[p.hand[ah],p.face[bf]]=[p.face[bf],p.hand[ah]];
-  else if(af>=0&&bh>=0)[p.face[af],p.hand[bh]]=[p.hand[bh],p.face[af]];
-  sortPrivateCards(p);
-  pushViews();
+  if(state?.phase!=='setup')return;
+  const p=state.players.find(x=>x.id===id);
+  if(!p||p.ready)return;
+
+  const ah=p.hand.findIndex(c=>c.id===aId), af=p.face.findIndex(c=>c.id===aId);
+  const bh=p.hand.findIndex(c=>c.id===bId), bf=p.face.findIndex(c=>c.id===bId);
+
+  let changed=false;
+  if(ah>=0&&bf>=0){
+    [p.hand[ah],p.face[bf]]=[p.face[bf],p.hand[ah]];
+    changed=true;
+  } else if(af>=0&&bh>=0){
+    [p.face[af],p.hand[bh]]=[p.hand[bh],p.face[af]];
+    changed=true;
+  }
+
+  if(changed){
+    sortPrivateCards(p);
+    pushViews();
+  }
 }
 function hostReady(id){
-  const p=state.players.find(x=>x.id===id);if(!p||state.phase!=='setup')return;p.ready=true;
-  if(state.players.every(x=>x.ready))beginPlay(); else pushViews();
+  const p=state.players.find(x=>x.id===id);
+  if(!p||state.phase!=='setup')return;
+
+  p.ready=true;
+
+  if(state.players.every(x=>x.ready)){
+    beginPlay();
+  } else {
+    pushViews();
+  }
 }
+
 function beginPlay(){
   state.phase='play';
+
   let starters=[];
-  state.players.forEach((p,i)=>p.hand.forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))starters.push(i)}));
-  if(starters.length)state.current=starters[Math.floor(Math.random()*starters.length)];
-  else{
-    let best={v:99,i:0};state.players.forEach((p,i)=>p.hand.forEach(c=>{const v=val[c.rank]??15;if(v<best.v)best={v,i}}));state.current=best.i;
+  state.players.forEach((p,i)=>p.hand.forEach(c=>{
+    if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))starters.push(i)
+  }));
+
+  if(starters.length){
+    state.current=starters[Math.floor(Math.random()*starters.length)];
+  } else {
+    let best={v:99,i:0};
+    state.players.forEach((p,i)=>p.hand.forEach(c=>{
+      const v=val[c.rank]??15;
+      if(v<best.v)best={v,i}
+    }));
+    state.current=best.i;
   }
-  state.message=`${state.players[state.current].name} goes first.`;pushViews();
+
+  state.message=`${state.players[state.current].name} goes first.`;
+
+  // Push the new play-phase view to every connected player immediately.
+  pushViews();
+
+  // Also send an explicit phase-change message as a fallback so clients
+  // re-render even if their last setup view was still on screen.
+  Object.entries(conns).forEach(([id,c])=>{
+    if(c.open){
+      c.send({type:'game_started',view:viewFor(id)});
+    }
+  });
 }
+
 function meaningfulTop(){for(let i=state.pile.length-1;i>=0;i--)if(state.pile[i].rank!=='4')return state.pile[i];return null}
 function consecutiveCount(rank){let n=0;for(let i=state.pile.length-1;i>=0;i--){const c=state.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
 function isMagic(c){return ['2','4','10','JOKER'].includes(c.rank)}
@@ -579,17 +647,81 @@ function renderSetup(){
   const S=uiState(); if(!S)return;
   $('setupFace').innerHTML=S.me.face.map(c=>cardHTML(c,{cls:S.me.ready?'':'selectable'})).join('');
   $('setupHand').innerHTML=S.me.hand.map(c=>cardHTML(c,{cls:S.me.ready?'':'selectable'})).join('');
-  $('readyBtn').disabled=S.me.ready;$('readyBtn').textContent=S.me.ready?'Ready ✓':'Ready';
-  $('setupNote').textContent=S.me.ready?'Waiting for the other players…':'';
-  document.querySelectorAll('#setup .card').forEach(el=>el.onclick=()=>setupTap(el.dataset.id));
+  $('readyBtn').disabled=S.me.ready;
+  $('readyBtn').textContent=S.me.ready?'Ready ✓':'Ready';
+
+  if(S.me.ready){
+    $('setupNote').textContent='Waiting for the other players…';
+  } else if(selectedSetup){
+    $('setupNote').textContent='Now tap a card in the other row.';
+  } else {
+    $('setupNote').textContent='Tap a hand card, then a face-up card to swap.';
+  }
+
+  document.querySelectorAll('#setup .card').forEach(el=>{
+    el.onclick=()=>setupTap(el.dataset.id);
+    el.classList.toggle('selected',el.dataset.id===selectedSetup?.id);
+  });
 }
+
+function optimisticSwap(aId,bId){
+  const S=uiState(); if(!S)return;
+  const hand=[...S.me.hand], face=[...S.me.face];
+  const ah=hand.findIndex(c=>c.id===aId), af=face.findIndex(c=>c.id===aId);
+  const bh=hand.findIndex(c=>c.id===bId), bf=face.findIndex(c=>c.id===bId);
+
+  if(ah>=0 && bf>=0){
+    [hand[ah],face[bf]]=[face[bf],hand[ah]];
+  } else if(af>=0 && bh>=0){
+    [face[af],hand[bh]]=[hand[bh],face[af]];
+  } else {
+    return;
+  }
+
+  S.me.hand=sortCards(hand);
+  S.me.face=sortCards(face);
+  renderSetup();
+}
+
 function setupTap(id){
   const S=uiState(); if(!S||S.me.ready)return;
-  const inHand=S.me.hand.some(c=>c.id===id),zone=inHand?'hand':'face';
-  if(!selectedSetup){selectedSetup={id,zone};$('setupNote').textContent='Now tap a card in the other row.';return}
-  if(zone===selectedSetup.zone){selectedSetup={id,zone};return}
-  const a=selectedSetup.id,b=id;selectedSetup=null;$('setupNote').textContent='';
-  if(isHost)hostSwap('p0',a,b);else sendHost({type:'swap',id:myId,a,b});
+
+  const inHand=S.me.hand.some(c=>c.id===id);
+  const inFace=S.me.face.some(c=>c.id===id);
+  if(!inHand && !inFace)return;
+  const zone=inHand?'hand':'face';
+
+  if(!selectedSetup){
+    selectedSetup={id,zone};
+    renderSetup();
+    return;
+  }
+
+  if(id===selectedSetup.id){
+    selectedSetup=null;
+    renderSetup();
+    return;
+  }
+
+  if(zone===selectedSetup.zone){
+    selectedSetup={id,zone};
+    renderSetup();
+    return;
+  }
+
+  const a=selectedSetup.id;
+  const b=id;
+  selectedSetup=null;
+
+  // Update the player's screen immediately so the swap feels responsive.
+  optimisticSwap(a,b);
+
+  // Then send the authoritative swap to the host.
+  if(isHost){
+    hostSwap('p0',a,b);
+  } else {
+    sendHost({type:'swap',id:myId,a,b});
+  }
 }
 function renderGame(){
   const S=uiState(); if(!S)return;
@@ -628,7 +760,17 @@ $('hostBtn').onclick=hostGame;
 $('joinBtn').onclick=joinGame;
 $('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame()});
 $('startBtn').onclick=startDeal;
-$('readyBtn').onclick=()=>{if(isHost)hostReady('p0');else sendHost({type:'ready',id:myId})};
+$('readyBtn').onclick=()=>{
+  const S=uiState();
+  if(S?.me?.ready)return;
+
+  $('readyBtn').disabled=true;
+  $('readyBtn').textContent='Ready ✓';
+  $('setupNote').textContent='Waiting for the other players…';
+
+  if(isHost)hostReady('p0');
+  else sendHost({type:'ready',id:myId});
+};
 $('playBtn').onclick=doPlay;$('pickupBtn').onclick=doPickup;
 </script>
 
