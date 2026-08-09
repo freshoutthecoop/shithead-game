@@ -1,8 +1,11 @@
-Shithead v43
+Shithead v44
 
-Fixes:
-- Walkthrough toggle is now visibly present in BOTH single-player and multiplayer.
-- Single-player now has a collapsible Turn History panel.
-- Single-player history records core plays, pickups, clears, and game start.
-- Existing compact layouts, difficulty levels, Firebase multiplayer, rematch, chat,
-  notifications, leaderboard, app icon, Joker design, and rules remain.
+Walkthrough toggle fix:
+- Removed duplicate/conflicting walkthrough click handlers.
+- Single player now uses one dedicated toggle function.
+- Multiplayer now uses one dedicated toggle function.
+- Button text changes immediately between Walkthrough: Off and Walkthrough: On.
+- aria-pressed state updates as well.
+- When toggled during a game, playable-card highlighting rerenders immediately.
+
+All v43 features remain.

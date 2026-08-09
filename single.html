@@ -663,20 +663,31 @@ function setDifficulty(d){
 document.querySelectorAll('.diffBtn').forEach(b=>b.addEventListener('click',()=>setDifficulty(b.dataset.diff)));
 
 
-document.getElementById('walkBtn')?.addEventListener('click',()=>{
-  walkthroughOn=!walkthroughOn;
-  document.getElementById('walkBtn').textContent=`Walkthrough: ${walkthroughOn?'On':'Off'}`;
-  if(typeof render==='function' && typeof G!=='undefined' && G)render();
-});
 
 
-document.getElementById('walkBtn')?.addEventListener('click',()=>{
-  walkthroughOn=!walkthroughOn;
-  document.getElementById('walkBtn').textContent=`Walkthrough: ${walkthroughOn?'On':'Off'}`;
-  if(typeof render==='function' && typeof G!=='undefined' && G)render();
-});
+
+
 document.getElementById('singleHistoryToggle')?.addEventListener('click',()=>{
   document.querySelector('.historyBox')?.classList.toggle('open');
+});
+
+
+function toggleWalkthroughSingle(){
+  walkthroughOn=!walkthroughOn;
+  const b=document.getElementById('walkBtn');
+  if(b){
+    b.textContent='Walkthrough: '+(walkthroughOn?'On':'Off');
+    b.setAttribute('aria-pressed',walkthroughOn?'true':'false');
+  }
+  if(typeof render==='function' && typeof G!=='undefined' && G)render();
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  const b=document.getElementById('walkBtn');
+  if(b){
+    b.textContent='Walkthrough: Off';
+    b.setAttribute('aria-pressed','false');
+    b.onclick=toggleWalkthroughSingle;
+  }
 });
 
 </script>

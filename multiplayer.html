@@ -311,7 +311,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v43 · walkthrough + single history fix</div>
+<div class="small">Firebase multiplayer v44 · walkthrough toggle fixed</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -1262,14 +1262,29 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('helpClose').onclick=()=>$('helpModal').classList.remove('open');
   $('helpModal').onclick=e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('open')};
   $('leaderBtn').onclick=()=>showLeaderboard().catch(e=>{$('leaderRows').textContent=e.message;$('leaderModal').classList.add('open')});
-  $('walkBtn').onclick=()=>{
-    walkthroughOn=!walkthroughOn;
-    $('walkBtn').textContent=`Walkthrough: ${walkthroughOn?'On':'Off'}`;
-    if(room?.phase==='play')renderGame();
-  };
+  
   $('leaderClose').onclick=()=>$('leaderModal').classList.remove('open');
   $('leaderModal').onclick=e=>{if(e.target===$('leaderModal'))$('leaderModal').classList.remove('open')};
 });
+
+function toggleWalkthroughMulti(){
+  walkthroughOn=!walkthroughOn;
+  const b=document.getElementById('walkBtn');
+  if(b){
+    b.textContent='Walkthrough: '+(walkthroughOn?'On':'Off');
+    b.setAttribute('aria-pressed',walkthroughOn?'true':'false');
+  }
+  if(room?.phase==='play')renderGame();
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  const b=document.getElementById('walkBtn');
+  if(b){
+    b.textContent='Walkthrough: Off';
+    b.setAttribute('aria-pressed','false');
+    b.onclick=toggleWalkthroughMulti;
+  }
+});
+
 </script>
 </body>
 </html>
