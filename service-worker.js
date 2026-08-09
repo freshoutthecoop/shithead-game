@@ -1,4 +1,4 @@
-const CACHE='shithead-v14-help-leaderboard';
+const CACHE='shithead-v16-hostfix';
 const STATIC=['./','./index.html','./single.html','./manifest.webmanifest','./icon-180.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(STATIC)));self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([

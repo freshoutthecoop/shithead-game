@@ -22,11 +22,10 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:none!important}.code{font-size:28px;font-weight:900;letter-spacing:3px}.notice{padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.08)}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
 
-.modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:10000}
-.modalBackdrop.open{display:flex}
-.modal{width:100%;max-width:620px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:18px;color:white}
-.modal h2{margin:0 0 10px}.modal h3{margin:16px 0 6px}.modal p{line-height:1.45}
-.close{float:right}.leaderRow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)}
+.mpModalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:10000;pointer-events:none}
+.mpModalBackdrop.open{display:flex;pointer-events:auto}
+.mpModal{width:100%;max-width:620px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:18px;color:white}
+.mpModal p{line-height:1.45}.mpModal .closeBtn{float:right}
 </style>
 
 <meta name="theme-color" content="#0f5132" />
@@ -314,23 +313,7 @@ function debug(msg){
 }
 
 
-
-function readLeaderboard(){
-  try{return JSON.parse(localStorage.getItem('shitheadLeaderboard')||'{}')}catch{return {}}
-}
-function saveWin(name){
-  if(!name)return;
-  const data=readLeaderboard();
-  data[name]=(data[name]||0)+1;
-  localStorage.setItem('shitheadLeaderboard',JSON.stringify(data));
-}
-function renderMpLeaderboard(){
-  const rows=Object.entries(readLeaderboard()).sort((a,b)=>b[1]-a[1]);
-  $('mpLeaderRows').innerHTML=rows.length
-    ? rows.map(([n,w],i)=>`<div class="leaderRow"><span>${i+1}. ${n}</span><strong>${w} win${w===1?'':'s'}</strong></div>`).join('')
-    : '<p>No multiplayer wins recorded on this device yet.</p>';
-}
-function safeName(){return $('nameInput').value.trim().slice(0,18)}
+function safeName(){return ($('nameInput').value.trim()||'Player').slice(0,18)}
 function makeRoom(){return 'SH'+Math.random().toString(36).slice(2,7).toUpperCase()}
 function normalizeRoom(v){return (v||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function setConnectMsg(msg){$('connectMsg').textContent=msg}
@@ -359,7 +342,6 @@ function sortPlayerCards(p){
 
 function hostGame(){
   debug('Host button tapped');
-  if(!safeName()){setConnectMsg('Enter a username first.');$('nameInput').focus();return;}
   if(!peerReady())return;
   isHost=true;
   roomCode=makeRoom();
@@ -388,7 +370,6 @@ function hostGame(){
 
 function joinGame(){
   debug('Join button tapped');
-  if(!safeName()){setConnectMsg('Enter a username first.');$('nameInput').focus();return;}
   if(!peerReady())return;
   roomCode=normalizeRoom($('roomInput').value);
   $('roomInput').value=roomCode;
@@ -484,8 +465,6 @@ function handleClientMessage(m){
     selectedSetup=null;
     selectedPlay=[];
     renderState();
-  } else if(m.type==='winner'){
-    saveWin(m.name);
   }
 }
 
@@ -739,13 +718,6 @@ function endIfNeeded(){
     const loser=hostState.players.find(p=>!p.finished);
     hostState.phase='done';
     hostState.message=`${loser?.name||'Nobody'} is the SHITHEAD.`;
-    const firstOutIndex=hostState.winnerOrder[0];
-    const winner=Number.isInteger(firstOutIndex)?hostState.players[firstOutIndex]:null;
-    if(winner){
-      hostState.winnerName=winner.name;
-      Object.entries(conns).forEach(([id,c])=>{if(c.open)c.send({type:'winner',name:winner.name})});
-      saveWin(winner.name);
-    }
     return true;
   }
   return false;
@@ -957,9 +929,21 @@ function playDown(id){
 }
 
 
-$('mpHelpBtn').addEventListener('click',()=>document.getElementById('mpHelpModal').classList.add('open'));
-$('mpLeaderBtn').addEventListener('click',()=>{renderMpLeaderboard();document.getElementById('mpLeaderModal').classList.add('open')});
-document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.close).classList.remove('open')));
+function mpReadLeaderboard(){
+  try{return JSON.parse(localStorage.getItem('shitheadLeaderboard')||'{}')}catch{return {}}
+}
+function mpRenderLeaderboard(){
+  const rows=Object.entries(mpReadLeaderboard()).sort((a,b)=>b[1]-a[1]);
+  $('mpLeaderRows').innerHTML=rows.length
+    ? rows.map(([n,w],i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)"><span>${i+1}. ${n}</span><strong>${w}</strong></div>`).join('')
+    : '<p>No wins recorded yet.</p>';
+}
+$('mpHelpBtn').onclick=()=>document.getElementById('mpHelpModal').classList.add('open');
+$('mpLeaderBtn').onclick=()=>{mpRenderLeaderboard();document.getElementById('mpLeaderModal').classList.add('open')};
+$('mpHelpClose').onclick=()=>document.getElementById('mpHelpModal').classList.remove('open');
+$('mpLeaderClose').onclick=()=>document.getElementById('mpLeaderModal').classList.remove('open');
+$('mpHelpModal').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
+$('mpLeaderModal').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
 
 $('hostBtn').onclick=hostGame;
 $('joinBtn').onclick=joinGame;
@@ -980,20 +964,18 @@ $('pickupBtn').onclick=doPickup;
 
 
 
-<div id="mpHelpModal" class="modalBackdrop">
-  <div class="modal">
-    <button class="close btn" data-close="mpHelpModal">Close</button>
+<div id="mpHelpModal" class="mpModalBackdrop">
+  <div class="mpModal">
+    <button id="mpHelpClose" class="btn closeBtn" type="button">Close</button>
     <h2>How to Play</h2>
-    <h3>Interface</h3>
-    <p>Enter a username. Host or join a room. During setup, tap one card in your hand and then one face-up card to swap them. Tap Ready when finished. During play, tap one or more matching cards, then Play. Use Pick Up Pile when you cannot or do not want to play.</p>
-    <h3>Rules</h3>
-    <p>Normally play the same rank or higher. 2 resets. 4 is transparent. 7 makes the next player play 7 or lower. 8 skips. 10 clears and cannot be played on 7. Joker reverses direction. Four matching ranks in a row clears the pile; transparent 4s do not interrupt the run. Draw back up to 3 while the deck remains. After your hand is gone, play face-up cards, then blind face-down cards. Last player with cards is the Shithead.</p>
+    <p><strong>Interface:</strong> Enter a username, host or join a room, swap one hand card with one face-up card during setup, then tap Ready. During play, select one or more matching cards and tap Play. Use Pick Up Pile when needed.</p>
+    <p><strong>Rules:</strong> Same rank or higher. 2 resets. 4 is transparent. 7 makes the next player play 7 or lower. 8 skips. 10 clears and cannot go on 7. Joker reverses. Four matching ranks in a row clears the pile. Draw back to 3 while the deck remains. Then play face-up, then blind face-down cards. Last player with cards is the Shithead.</p>
   </div>
 </div>
-<div id="mpLeaderModal" class="modalBackdrop">
-  <div class="modal">
-    <button class="close btn" data-close="mpLeaderModal">Close</button>
-    <h2>Multiplayer Leaderboard</h2>
+<div id="mpLeaderModal" class="mpModalBackdrop">
+  <div class="mpModal">
+    <button id="mpLeaderClose" class="btn closeBtn" type="button">Close</button>
+    <h2>Leaderboard</h2>
     <div id="mpLeaderRows"></div>
     <p class="small">Saved on this device.</p>
   </div>
