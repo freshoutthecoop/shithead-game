@@ -21,6 +21,12 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
 input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:none!important}.code{font-size:28px;font-weight:900;letter-spacing:3px}.notice{padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.08)}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
+
+.modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:10000}
+.modalBackdrop.open{display:flex}
+.modal{width:100%;max-width:620px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:18px;color:white}
+.modal h2{margin:0 0 10px}.modal h3{margin:16px 0 6px}.modal p{line-height:1.45}
+.close{float:right}.leaderRow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)}
 </style>
 
 <meta name="theme-color" content="#0f5132" />
@@ -232,7 +238,7 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
 
 <div id="home" class="panel">
   <div class="row">
-    <input id="nameInput" placeholder="Your name" maxlength="18" />
+    <input id="nameInput" placeholder="Username" maxlength="18" />
     <button id="hostBtn" class="btn primary">Host Game</button>
   </div>
   <div class="small" style="margin:10px 0 6px">or join someone else's game</div>
@@ -308,7 +314,23 @@ function debug(msg){
 }
 
 
-function safeName(){return ($('nameInput').value.trim()||'Player').slice(0,18)}
+
+function readLeaderboard(){
+  try{return JSON.parse(localStorage.getItem('shitheadLeaderboard')||'{}')}catch{return {}}
+}
+function saveWin(name){
+  if(!name)return;
+  const data=readLeaderboard();
+  data[name]=(data[name]||0)+1;
+  localStorage.setItem('shitheadLeaderboard',JSON.stringify(data));
+}
+function renderMpLeaderboard(){
+  const rows=Object.entries(readLeaderboard()).sort((a,b)=>b[1]-a[1]);
+  $('mpLeaderRows').innerHTML=rows.length
+    ? rows.map(([n,w],i)=>`<div class="leaderRow"><span>${i+1}. ${n}</span><strong>${w} win${w===1?'':'s'}</strong></div>`).join('')
+    : '<p>No multiplayer wins recorded on this device yet.</p>';
+}
+function safeName(){return $('nameInput').value.trim().slice(0,18)}
 function makeRoom(){return 'SH'+Math.random().toString(36).slice(2,7).toUpperCase()}
 function normalizeRoom(v){return (v||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function setConnectMsg(msg){$('connectMsg').textContent=msg}
@@ -337,6 +359,7 @@ function sortPlayerCards(p){
 
 function hostGame(){
   debug('Host button tapped');
+  if(!safeName()){setConnectMsg('Enter a username first.');$('nameInput').focus();return;}
   if(!peerReady())return;
   isHost=true;
   roomCode=makeRoom();
@@ -365,6 +388,7 @@ function hostGame(){
 
 function joinGame(){
   debug('Join button tapped');
+  if(!safeName()){setConnectMsg('Enter a username first.');$('nameInput').focus();return;}
   if(!peerReady())return;
   roomCode=normalizeRoom($('roomInput').value);
   $('roomInput').value=roomCode;
@@ -460,6 +484,8 @@ function handleClientMessage(m){
     selectedSetup=null;
     selectedPlay=[];
     renderState();
+  } else if(m.type==='winner'){
+    saveWin(m.name);
   }
 }
 
@@ -713,6 +739,13 @@ function endIfNeeded(){
     const loser=hostState.players.find(p=>!p.finished);
     hostState.phase='done';
     hostState.message=`${loser?.name||'Nobody'} is the SHITHEAD.`;
+    const firstOutIndex=hostState.winnerOrder[0];
+    const winner=Number.isInteger(firstOutIndex)?hostState.players[firstOutIndex]:null;
+    if(winner){
+      hostState.winnerName=winner.name;
+      Object.entries(conns).forEach(([id,c])=>{if(c.open)c.send({type:'winner',name:winner.name})});
+      saveWin(winner.name);
+    }
     return true;
   }
   return false;
@@ -923,6 +956,11 @@ function playDown(id){
   else sendHost({type:'down',id:myId,cardId:id});
 }
 
+
+$('mpHelpBtn').addEventListener('click',()=>document.getElementById('mpHelpModal').classList.add('open'));
+$('mpLeaderBtn').addEventListener('click',()=>{renderMpLeaderboard();document.getElementById('mpLeaderModal').classList.add('open')});
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.close).classList.remove('open')));
+
 $('hostBtn').onclick=hostGame;
 $('joinBtn').onclick=joinGame;
 $('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame()});
@@ -940,6 +978,26 @@ $('pickupBtn').onclick=doPickup;
 
 
 
+
+
+<div id="mpHelpModal" class="modalBackdrop">
+  <div class="modal">
+    <button class="close btn" data-close="mpHelpModal">Close</button>
+    <h2>How to Play</h2>
+    <h3>Interface</h3>
+    <p>Enter a username. Host or join a room. During setup, tap one card in your hand and then one face-up card to swap them. Tap Ready when finished. During play, tap one or more matching cards, then Play. Use Pick Up Pile when you cannot or do not want to play.</p>
+    <h3>Rules</h3>
+    <p>Normally play the same rank or higher. 2 resets. 4 is transparent. 7 makes the next player play 7 or lower. 8 skips. 10 clears and cannot be played on 7. Joker reverses direction. Four matching ranks in a row clears the pile; transparent 4s do not interrupt the run. Draw back up to 3 while the deck remains. After your hand is gone, play face-up cards, then blind face-down cards. Last player with cards is the Shithead.</p>
+  </div>
+</div>
+<div id="mpLeaderModal" class="modalBackdrop">
+  <div class="modal">
+    <button class="close btn" data-close="mpLeaderModal">Close</button>
+    <h2>Multiplayer Leaderboard</h2>
+    <div id="mpLeaderRows"></div>
+    <p class="small">Saved on this device.</p>
+  </div>
+</div>
 
 <div id="debugPanel" style="position:fixed;right:6px;bottom:6px;z-index:9999;width:min(92vw,430px);max-height:150px;overflow:auto;background:rgba(0,0,0,.88);color:#d8ffd8;border:1px solid rgba(255,255,255,.25);border-radius:9px;padding:7px;font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace">
   <div style="display:flex;justify-content:space-between;gap:8px"><strong>MP DEBUG v13</strong><span id="debugRole">starting</span></div>

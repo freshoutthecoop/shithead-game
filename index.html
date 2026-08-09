@@ -40,6 +40,14 @@ body{
 .mode.primary{background:#ffd166;color:#29220d}
 .mode.primary p{color:#5b4b18}
 .note{font-size:13px;color:#d7e6de;margin-top:20px}
+
+.secondaryButton{width:100%;text-align:left;font:inherit;cursor:pointer}
+.modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:100}
+.modalBackdrop.open{display:flex}
+.modal{width:100%;max-width:620px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:18px;color:white}
+.modal h2{margin:0 0 10px}.modal h3{margin:18px 0 6px}.modal p,.modal li{color:#e4efe9;line-height:1.45}
+.modal ol,.modal ul{padding-left:22px}.modal .close{float:right;border:0;border-radius:10px;padding:8px 11px;font-weight:800}
+.leaderRow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.12)}
 </style>
 </head>
 <body>
@@ -57,10 +65,80 @@ body{
     <p>Host a room or join friends with a room code.</p>
   </a>
 
+
+  <button id="helpBtn" class="mode secondaryButton" type="button">
+    <h2>How to Play</h2>
+    <p>Interface guide and complete game rules.</p>
+  </button>
+
+  <button id="leaderBtn" class="mode secondaryButton" type="button">
+    <h2>Leaderboard</h2>
+    <p>Multiplayer wins saved on this device.</p>
+  </button>
+
   <div class="note">Multiplayer requires an internet connection. Single player can work offline after the app has been loaded once.</div>
 </div>
 
+
+<div id="helpModal" class="modalBackdrop">
+  <div class="modal">
+    <button class="close" data-close="helpModal">Close</button>
+    <h2>How to Play Shithead</h2>
+
+    <h3>Using the app</h3>
+    <ol>
+      <li>Choose Single Player or Multiplayer.</li>
+      <li>In multiplayer, type a username. One person hosts and shares the room code; everyone else joins with that code.</li>
+      <li>Each player starts with 3 face-down cards, 3 face-up cards, and 3 cards in hand.</li>
+      <li>Before play begins, tap a card in your hand and then a face-up card to swap them. Put your strongest cards face-up if you can.</li>
+      <li>Tap Ready when you are done swapping.</li>
+      <li>On your turn, tap one card to select it. Tap multiple cards of the same rank to play them together, then tap Play.</li>
+      <li>If you cannot or do not want to play, tap Pick Up Pile.</li>
+      <li>When your hand is gone and the draw deck is empty, play your face-up cards. After those are gone, tap a face-down card blindly.</li>
+    </ol>
+
+    <h3>Game rules</h3>
+    <p>Play normally counts upward. If a 6 is on top, the next player may play 6 or higher. Matching ranks may be played together.</p>
+    <ul>
+      <li><strong>2:</strong> Magic. Can be played on anything. Resets the count.</li>
+      <li><strong>4:</strong> Magic and transparent. It does not change the active rank or restriction underneath it.</li>
+      <li><strong>7:</strong> Special. Must itself be played legally in numerical order. The next player must then play 7 or lower. After that turn, play returns to normal.</li>
+      <li><strong>8:</strong> Special. Must itself be played legally in numerical order. Skips the next player. Two 8s skip two players, etc.</li>
+      <li><strong>10:</strong> Magic. Clears the pile and the same player goes again. A 10 cannot be played on a 7.</li>
+      <li><strong>Joker:</strong> Magic. Reverses direction. Two Jokers reverse twice, leaving direction unchanged.</li>
+      <li><strong>Four in a row:</strong> Four of the same rank in succession clears the pile. Transparent 4s do not interrupt the sequence.</li>
+    </ul>
+    <p>If you cannot play, you pick up the entire pile. The next player begins a new pile. While the draw deck has cards, you draw back up to 3 after your turn.</p>
+    <p>Players who use all of their cards are out. Play continues until only one player still has cards. That player is the <strong>Shithead</strong>.</p>
+  </div>
+</div>
+
+<div id="leaderModal" class="modalBackdrop">
+  <div class="modal">
+    <button class="close" data-close="leaderModal">Close</button>
+    <h2>Multiplayer Leaderboard</h2>
+    <div id="leaderRows"></div>
+    <p style="font-size:13px;color:#cfe1d8;margin-top:12px">Wins are saved on this device. A shared internet-wide leaderboard would require a database.</p>
+  </div>
+</div>
+
 <script>
+
+function readLeaderboard(){
+  try{return JSON.parse(localStorage.getItem('shitheadLeaderboard')||'{}')}catch{return {}}
+}
+function renderLeaderboard(){
+  const data=readLeaderboard();
+  const rows=Object.entries(data).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('leaderRows').innerHTML=rows.length
+    ? rows.map(([name,wins],i)=>`<div class="leaderRow"><span>${i+1}. ${name}</span><strong>${wins} win${wins===1?'':'s'}</strong></div>`).join('')
+    : '<p>No multiplayer wins recorded on this device yet.</p>';
+}
+document.getElementById('helpBtn').addEventListener('click',()=>document.getElementById('helpModal').classList.add('open'));
+document.getElementById('leaderBtn').addEventListener('click',()=>{renderLeaderboard();document.getElementById('leaderModal').classList.add('open')});
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.close).classList.remove('open')));
+document.querySelectorAll('.modalBackdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 }
