@@ -1,9 +1,7 @@
-This package contains the exact original single-player HTML file from the first version that worked.
+Shithead v21 clean multiplayer test.
 
-Use this only as a baseline test:
-1. Upload index.html and single.html to GitHub Pages.
-2. Open the same GitHub Pages link.
-3. You should see 'Single-player baseline v20'.
-4. Tap Open Single Player, then New Game.
-
-There is no service worker, multiplayer, help modal, leaderboard, or app shell in this test.
+Important:
+- single.html is copied unchanged from the working v20 baseline.
+- There is NO service worker and NO offline cache.
+- Multiplayer has no leaderboard/help modal yet.
+- Test sequence: host -> join -> Deal Cards -> both swap -> both Ready -> both should enter game.
