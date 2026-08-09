@@ -20,9 +20,6 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
 .setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
-
-.spHelpBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:10000;pointer-events:none}
-.spHelpBackdrop.open{display:flex;pointer-events:auto}.spHelpBox{width:100%;max-width:620px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:18px}.spHelpBox p{line-height:1.45}
 </style>
 
 <meta name="theme-color" content="#0f5132" />
@@ -31,204 +28,10 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 <meta name="apple-mobile-web-app-title" content="Shithead" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="icon-180.png" />
-<style>
-html,body{overscroll-behavior:none}
-body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-</style>
-
-
-<style>
-/* v6 opponent strips on ALL screen sizes */
-#opponents{
-  display:grid !important;
-  grid-template-columns:1fr !important;
-  gap:4px !important;
-}
-
-#opponents .player{
-  display:grid !important;
-  grid-template-columns:minmax(90px,1fr) auto minmax(130px,auto) minmax(80px,auto);
-  align-items:center;
-  gap:8px;
-  min-width:0;
-  padding:5px 8px !important;
-  border-radius:8px !important;
-  text-align:left;
-}
-
-#opponents .oppMeta{
-  display:block !important;
-  margin:0 !important;
-  min-width:0;
-}
-
-#opponents .oppMeta>div:first-child{
-  font-size:13px;
-  font-weight:800;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-#opponents .oppCount{
-  display:inline-flex !important;
-  min-width:0 !important;
-  height:auto !important;
-  padding:2px 6px !important;
-  margin-top:2px;
-  font-size:12px !important;
-  border-radius:999px !important;
-}
-
-#opponents .small{
-  font-size:11px !important;
-  white-space:nowrap;
-}
-
-#opponents .cards{
-  margin:0 !important;
-  gap:2px !important;
-  flex-wrap:nowrap !important;
-  justify-content:flex-end;
-}
-
-#opponents .card{
-  width:25px !important;
-  height:35px !important;
-  padding:2px !important;
-  border-width:1px !important;
-  border-radius:4px !important;
-  box-shadow:none !important;
-}
-
-#opponents .rank,
-#opponents .suit{
-  font-size:9px !important;
-}
-
-/* Make the rest slightly more compact without changing the familiar layout */
-.pileArea{
-  padding:8px 10px;
-  gap:8px;
-}
-
-#yourFace,#yourDown,#yourHand{
-  margin:4px 0 8px !important;
-}
-
-@media(max-width:700px){
-  .wrap{padding:8px 8px 18px}
-  h1{font-size:22px;margin:0 0 4px}
-  .panel{padding:8px;margin:6px 0;border-radius:12px}
-
-  #opponents .player{
-    grid-template-columns:minmax(72px,1fr) auto minmax(105px,auto) minmax(64px,auto);
-    gap:5px;
-    padding:4px 6px !important;
-  }
-
-  #opponents .oppMeta>div:first-child{font-size:12px}
-  #opponents .oppCount{font-size:11px !important}
-  #opponents .small{font-size:10px !important}
-
-  #opponents .card{
-    width:20px !important;
-    height:28px !important;
-    padding:1px !important;
-  }
-
-  #opponents .rank,#opponents .suit{font-size:8px !important}
-
-  .pileArea .pileCard{width:52px;height:72px}
-  #drawCount{font-size:21px !important}
-  #direction{font-size:20px !important}
-
-  #yourFace .card,#yourDown .card,#yourHand .card{
-    width:49px;height:68px;padding:4px;
-  }
-  #yourFace .rank,#yourDown .rank,#yourHand .rank{font-size:17px}
-  #yourFace .suit,#yourDown .suit,#yourHand .suit{font-size:18px}
-}
-</style>
-
-
-<style>
-/* v7: make the player's area more proportional */
-#game > .panel:last-child{
-  padding:9px 10px !important;
-}
-
-#status{
-  min-height:28px !important;
-  margin-bottom:4px;
-}
-
-#yourFace,
-#yourDown,
-#yourHand{
-  margin:3px 0 7px !important;
-  gap:4px !important;
-}
-
-#yourFace .card,
-#yourDown .card{
-  width:44px !important;
-  height:61px !important;
-  padding:3px !important;
-}
-
-#yourHand .card{
-  width:47px !important;
-  height:65px !important;
-  padding:3px !important;
-}
-
-#yourFace .rank,
-#yourDown .rank,
-#yourHand .rank{
-  font-size:15px !important;
-}
-
-#yourFace .suit,
-#yourDown .suit,
-#yourHand .suit{
-  font-size:16px !important;
-}
-
-#game > .panel:last-child .label,
-#game > .panel:last-child .small{
-  font-size:11px !important;
-}
-
-#game > .panel:last-child .row{
-  gap:6px;
-}
-
-#game > .panel:last-child .btn{
-  padding:9px 12px !important;
-  font-size:14px;
-}
-
-@media(max-width:700px){
-  #yourFace .card,
-  #yourDown .card{
-    width:40px !important;
-    height:56px !important;
-  }
-
-  #yourHand .card{
-    width:44px !important;
-    height:61px !important;
-  }
-}
-</style>
-
 </head>
-<body>
-    <div style="max-width:760px;margin:0 auto;padding:10px 12px 0">
-      <a href="index.html" style="display:inline-block;text-decoration:none;background:rgba(255,255,255,.14);color:white;padding:10px 12px;border-radius:10px;font-weight:800">← Modes</a>
-    </div>
-    
+<body><div style="max-width:760px;margin:0 auto;padding:8px 12px 0">
+<a href="index.html" style="display:inline-block;text-decoration:none;background:rgba(255,255,255,.14);color:white;padding:9px 11px;border-radius:10px;font-weight:800">← Modes</a>
+</div>
 <div class="wrap">
 <h1>Shithead</h1>
 <div id="start" class="panel">
@@ -238,7 +41,7 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
       <select id="playerCount"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select>
     </label>
   </div>
-  <div class="row" style="margin-top:12px"><button id="newGame" class="btn primary">New Game</button><button id="spHelpBtn" class="btn" type="button">How to Play</button></div>
+  <div style="margin-top:12px"><button id="newGame" class="btn primary">New Game</button></div>
 </div>
 
 <div id="setup" class="panel hidden">
@@ -423,19 +226,7 @@ function render(){
   $('pickupBtn').disabled=G.current!==0||G.phase!=='play'||G.pile.length===0;
 }
 $('newGame').onclick=()=>deal(parseInt($('playerCount').value));
-$('spHelpBtn').onclick=()=>document.getElementById('spHelpModal').classList.add('open');
-$('spHelpClose').onclick=()=>document.getElementById('spHelpModal').classList.remove('open');
-$('spHelpModal').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
 $('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);
 </script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
-}
-</script>
-
-
-<div id="spHelpModal" class="spHelpBackdrop"><div class="spHelpBox"><button id="spHelpClose" class="btn" type="button">Close</button><h2>How to Play</h2><p>Swap one hand card with one face-up card during setup, then tap Ready. Play the same rank or higher. 2 resets, 4 is transparent, 7 forces 7 or lower, 8 skips, 10 clears and cannot go on 7, Joker reverses, and four matching ranks in a row clears the pile. Draw back to 3 while the deck remains, then play face-up and finally blind face-down cards. Last player with cards is the Shithead.</p></div></div>
 </body>
 </html>

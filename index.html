@@ -1,122 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shithead</title>
-<meta name="theme-color" content="#0f5132" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Shithead" />
-<link rel="manifest" href="manifest.webmanifest" />
-<link rel="apple-touch-icon" href="icon-180.png" />
+<meta name="theme-color" content="#0f5132">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-body{
-  min-height:100vh;
-  padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
-  color:white;
-  background:linear-gradient(#0f5132,#0b3d28);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.wrap{width:100%;max-width:520px}
-.logo{font-size:42px;font-weight:950;margin:0 0 6px}
-.sub{color:#d7e6de;margin-bottom:24px}
-.mode{
-  display:block;
-  text-decoration:none;
-  color:white;
-  background:rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:18px;
-  padding:18px;
-  margin:12px 0;
-}
-.mode h2{margin:0 0 5px;font-size:24px}
-.mode p{margin:0;color:#d7e6de}
-.mode.primary{background:#ffd166;color:#29220d}
-.mode.primary p{color:#5b4b18}
-.note{font-size:13px;color:#d7e6de;margin-top:20px}
-
-.secondaryButton{width:100%;text-align:left;font:inherit;cursor:pointer}
-.homeModalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:99999}
-.homeModalBackdrop.open{display:flex}
-.homeModal{width:100%;max-width:620px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:18px;color:white}
-.homeModal p,.homeModal li{line-height:1.45}.homeModal .closeBtn{float:right}
-.leaderRow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(#0f5132,#0b3d28);color:white;display:flex;align-items:center;justify-content:center;padding:20px}
+.wrap{width:100%;max-width:520px}.mode{display:block;text-decoration:none;color:white;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:18px;margin:12px 0}.primary{background:#ffd166;color:#29220d}.primary p{color:#5b4b18}.mode h2{margin:0 0 5px}.mode p{margin:0;color:#d7e6de}.version{font-size:12px;color:#d7e6de;margin-bottom:18px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="logo">Shithead</div>
-  <div class="sub">Choose how you want to play.</div>
-
-  <a class="mode primary" href="single.html">
-    <h2>Single Player</h2>
-    <p>Play against computer opponents.</p>
-  </a>
-
-  <a class="mode" href="multiplayer.html?v=17">
-    <h2>Multiplayer</h2>
-    <p>Host a room or join friends with a room code.</p>
-  </a>
-
-
-  <button id="helpBtn" class="mode secondaryButton" type="button">
-    <h2>How to Play</h2>
-    <p>Interface guide and complete rules.</p>
-  </button>
-
-  <button id="leaderBtn" class="mode secondaryButton" type="button">
-    <h2>Leaderboard</h2>
-    <p>Multiplayer wins saved on this device.</p>
-  </button>
-
-  <div class="note">Multiplayer requires an internet connection. Single player can work offline after the app has been loaded once.</div>
+<h1>Shithead</h1>
+<div class="version">Clean rebuild v19</div>
+<a class="mode primary" href="single.html?v=19"><h2>Single Player</h2><p>Play against computer opponents.</p></a>
+<a class="mode" href="multiplayer.html?v=19"><h2>Multiplayer</h2><p>Host or join with a room code.</p></a>
 </div>
-
-
-<div id="helpModal" class="homeModalBackdrop">
-  <div class="homeModal">
-    <button id="helpCloseBtn" class="closeBtn">Close</button>
-    <h2>How to Play</h2>
-    <p><strong>Interface:</strong> Choose a mode. In multiplayer, enter a username, then host or join with a room code. During setup, tap one card in your hand and one face-up card to swap them, then tap Ready. During play, select one or more matching cards and tap Play. Tap Pick Up Pile if needed.</p>
-    <p><strong>Rules:</strong> Play the same rank or higher. 2 resets. 4 is transparent. 7 makes the next player play 7 or lower. 8 skips. 10 clears and cannot go on a 7. Joker reverses. Four of the same rank in a row clears the pile, with 4s remaining transparent. Draw back to 3 while the deck remains. After your hand is gone, play face-up cards, then blind face-down cards. Last player holding cards is the Shithead.</p>
-  </div>
-</div>
-<div id="leaderModal" class="homeModalBackdrop">
-  <div class="homeModal">
-    <button id="leaderCloseBtn" class="closeBtn">Close</button>
-    <h2>Multiplayer Leaderboard</h2>
-    <div id="leaderRows"></div>
-    <p style="font-size:13px">Wins are saved on this device.</p>
-  </div>
-</div>
-
-<script>
-
-function homeReadLeaderboard(){
-  try{return JSON.parse(localStorage.getItem('shitheadLeaderboard')||'{}')}catch{return {}}
-}
-function homeRenderLeaderboard(){
-  const rows=Object.entries(homeReadLeaderboard()).sort((a,b)=>b[1]-a[1]);
-  document.getElementById('leaderRows').innerHTML=rows.length
-    ? rows.map(([n,w],i)=>`<div class="leaderRow"><span>${i+1}. ${n}</span><strong>${w} win${w===1?'':'s'}</strong></div>`).join('')
-    : '<p>No wins recorded yet.</p>';
-}
-document.getElementById('helpBtn')?.addEventListener('click',()=>document.getElementById('helpModal').classList.add('open'));
-document.getElementById('leaderBtn')?.addEventListener('click',()=>{homeRenderLeaderboard();document.getElementById('leaderModal').classList.add('open')});
-document.getElementById('helpCloseBtn')?.addEventListener('click',()=>document.getElementById('helpModal').classList.remove('open'));
-document.getElementById('leaderCloseBtn')?.addEventListener('click',()=>document.getElementById('leaderModal').classList.remove('open'));
-document.getElementById('helpModal')?.addEventListener('click',e=>{if(e.target.id==='helpModal')e.currentTarget.classList.remove('open')});
-document.getElementById('leaderModal')?.addEventListener('click',e=>{if(e.target.id==='leaderModal')e.currentTarget.classList.remove('open')});
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
-}
-</script>
 </body>
 </html>
