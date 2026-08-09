@@ -47,13 +47,19 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 @media(max-width:650px){
   .chatMessages{max-height:120px}
 }
+
+.historyBox{margin-top:8px;background:rgba(0,0,0,.14);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px}
+.historyList{max-height:170px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.historyItem{font-size:12px;line-height:1.35;color:#eef6f1}
+.historyItem .time{color:var(--muted);margin-right:5px}
+@media(max-width:650px){.historyList{max-height:130px}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v26 · chat + universal four-of-a-kind</div>
+<div class="small">Firebase multiplayer v27 · chat + turn history</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -102,6 +108,10 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
     <div class="small">FACE DOWN</div><div id="yourDown" class="cards" style="margin:5px 0 10px"></div>
     <div class="small">HAND</div><div id="yourHand" class="cards" style="margin:5px 0 10px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up</button></div>
+    <div class="historyBox">
+      <div class="small" style="font-weight:800;margin-bottom:5px">TURN HISTORY</div>
+      <div id="historyList" class="historyList"></div>
+    </div>
     <div class="chatBox">
       <div class="small" style="font-weight:800;margin-bottom:5px">GAME CHAT</div>
       <div id="chatMessages" class="chatMessages"></div>
@@ -271,7 +281,7 @@ function renderRoom(){
   $('roomCode').textContent=roomCode;
   if(room.phase==='lobby'){showOnly('lobby');renderLobby()}
   else if(room.phase==='setup'){showOnly('setup');renderSetup()}
-  else {showOnly('game');renderGame();renderChat()}
+  else {showOnly('game');renderGame();renderHistory();renderChat()}
 }
 
 function renderLobby(){
@@ -366,6 +376,7 @@ async function ready(){
       }
       cur.game.current=current;
       cur.game.message=`${players[current].name} goes first.`;
+      addHistoryToRoom(cur,`${players[current].name} starts the game.`,'start');
     }
     return cur;
   });
@@ -408,12 +419,17 @@ function finishCheck(cur,players,i){
   const p=players[i],g=cur.game;
   if(!(g.draw||[]).length&&!(p.hand||[]).length&&!(p.face||[]).length&&!(p.down||[]).length&&!p.finished){
     p.finished=true;g.winnerOrder=g.winnerOrder||[];g.winnerOrder.push(p.id);g.message+=` ${p.name} is out!`;
+    addHistoryToRoom(cur,`${p.name} is out of cards.`,'out');
     if(!g.winnerRecorded){
       g.winnerRecorded=true;g.winnerName=p.name;
     }
   }
   const active=activePlayers(players);
-  if(active.length<=1){cur.phase='done';g.message=`${active[0]?.name||'Nobody'} is the SHITHEAD.`}
+  if(active.length<=1){
+    cur.phase='done';
+    g.message=`${active[0]?.name||'Nobody'} is the SHITHEAD.`;
+    addHistoryToRoom(cur,`${active[0]?.name||'Nobody'} is the SHITHEAD.`,'end');
+  }
 }
 async function recordWinnerIfNeeded(){
   if(!room?.game?.winnerRecorded||!room.game.winnerName||room.game.leaderboardSaved)return;
@@ -481,6 +497,7 @@ async function playSelected(){
       g.pile=[];
       g.mustLow=false;
       g.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank} and made four in a row. Pile cleared.`,'clear');
       drawUp(p,g);
       p.hand=sortCards(p.hand||[]);
       p.face=sortCards(p.face||[]);
@@ -491,12 +508,14 @@ async function playSelected(){
 
     if(rank==='JOKER'){
       for(let k=0;k<cards.length;k++)g.direction*=-1;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' Jokers':'a Joker'} and reversed direction${cards.length>1?' accordingly':''}.`,'reverse');
     }
 
     if(rank==='8'){
       g.mustLow=false;
       drawUp(p,g);
       g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8.`;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`,'skip');
       finishCheck(cur,players,i);
       if(cur.phase==='play')advance(g,players,cards.length+1);
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
@@ -514,8 +533,10 @@ async function playSelected(){
       g.pile=[];
       g.mustLow=false;
       g.message=`${p.name} cleared the pile and plays again.`;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}. Pile cleared.`,'clear');
     } else {
       g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
+      if(rank!=='JOKER')addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`,'play');
     }
 
     drawUp(p,g);
@@ -532,7 +553,7 @@ async function pickup(){
     if(!cur||cur.phase!=='play')return cur;
     const players=normalizePlayers(cur.players),g=cur.game;
     const i=players.findIndex(p=>p.id===myId);if(i!==g.current||!(g.pile||[]).length)return cur;
-    const p=players[i];p.hand=p.hand||[];p.hand.push(...g.pile);p.hand=sortCards(p.hand);g.pile=[];g.mustLow=false;g.message=`${p.name} picked up the pile.`;advance(g,players,1);
+    const p=players[i];const picked=(g.pile||[]).length;p.hand=p.hand||[];p.hand.push(...g.pile);p.hand=sortCards(p.hand);g.pile=[];g.mustLow=false;g.message=`${p.name} picked up the pile.`;addHistoryToRoom(cur,`${p.name} picked up ${picked} card${picked===1?'':'s'}.`,'pickup');advance(g,players,1);
     cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
   });
 }
@@ -556,6 +577,7 @@ async function playDown(id){
       g.pile=[];
       g.mustLow=false;
       g.message=`${p.name} flipped ${c.rank} and picked up.`;
+      addHistoryToRoom(cur,`${p.name} blindly flipped ${c.rank}, could not play it, and picked up the pile.`,'blind');
       advance(g,players,1);
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
       return cur;
@@ -569,6 +591,7 @@ async function playDown(id){
       g.pile=[];
       g.mustLow=false;
       g.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+      addHistoryToRoom(cur,`${p.name} blindly flipped ${rank} and made four in a row. Pile cleared.`,'clear');
       finishCheck(cur,players,i);
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
       return cur;
@@ -579,6 +602,7 @@ async function playDown(id){
     if(rank==='8'){
       g.mustLow=false;
       g.message=`${p.name} flipped an 8.`;
+      addHistoryToRoom(cur,`${p.name} blindly flipped an 8 and skipped the next player.`,'skip');
       finishCheck(cur,players,i);
       if(cur.phase==='play')advance(g,players,2);
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
@@ -606,6 +630,31 @@ async function playDown(id){
   });
 }
 
+
+function addHistoryToRoom(cur,text,type='turn'){
+  cur.history=cur.history||{};
+  const key='h_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
+  cur.history[key]={
+    text,
+    type,
+    ts:firebase.database.ServerValue.TIMESTAMP
+  };
+}
+function renderHistory(){
+  const items=room?.history?Object.values(room.history):[];
+  items.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const recent=items.slice(-80);
+  const box=$('historyList');
+  if(!box)return;
+  box.innerHTML=recent.length
+    ? recent.map(h=>{
+        const d=h.ts?new Date(h.ts):null;
+        const tm=d?d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
+        return `<div class="historyItem">${tm?`<span class="time">${tm}</span>`:''}${escapeHtml(h.text||'')}</div>`;
+      }).join('')
+    : '<div class="small">No turns yet.</div>';
+  box.scrollTop=box.scrollHeight;
+}
 function renderChat(){
   const msgs=room?.chat?Object.values(room.chat):[];
   msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
