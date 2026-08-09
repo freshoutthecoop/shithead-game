@@ -298,6 +298,15 @@ let hostState=null;   // authoritative state exists only on host
 let viewState=null;   // each device renders only this
 let selectedSetup=null;
 let selectedPlay=[];
+function debug(msg){
+  const el=$('debugLog');
+  const role=$('debugRole');
+  if(role)role.textContent=isHost?'HOST':(myId||'CLIENT');
+  const line=document.createElement('div');
+  line.textContent=new Date().toLocaleTimeString()+' '+msg;
+  if(el){el.appendChild(line);el.scrollTop=el.scrollHeight}
+}
+
 
 function safeName(){return ($('nameInput').value.trim()||'Player').slice(0,18)}
 function makeRoom(){return 'SH'+Math.random().toString(36).slice(2,7).toUpperCase()}
@@ -327,6 +336,7 @@ function sortPlayerCards(p){
 }
 
 function hostGame(){
+  debug('Host button tapped');
   if(!peerReady())return;
   isHost=true;
   roomCode=makeRoom();
@@ -336,13 +346,17 @@ function hostGame(){
   peer=new Peer(roomCode.toLowerCase(),{debug:1});
 
   peer.on('open',()=>{
+    debug('Host Peer open: '+peer.id);
     lobby=[{id:'p0',name:safeName(),ready:false}];
     setConnectMsg('');
     openLobby();
   });
 
   peer.on('connection',conn=>{
+    debug('Incoming DataConnection from '+conn.peer);
+    conn.on('open',()=>debug('Incoming DataConnection OPEN '+conn.peer));
     conn.on('data',msg=>handleHostMessage(conn,msg));
+    conn.on('error',e=>debug('Incoming conn error '+(e?.type||e)));
     conn.on('close',()=>removeConnection(conn));
   });
 
@@ -350,6 +364,7 @@ function hostGame(){
 }
 
 function joinGame(){
+  debug('Join button tapped');
   if(!peerReady())return;
   roomCode=normalizeRoom($('roomInput').value);
   $('roomInput').value=roomCode;
@@ -359,13 +374,15 @@ function joinGame(){
   peer=new Peer(undefined,{debug:1});
 
   peer.on('open',()=>{
+    debug('Client Peer open: '+peer.id);
     hostConn=peer.connect(roomCode.toLowerCase(),{reliable:true,serialization:'json'});
     hostConn.on('open',()=>{
+      debug('DataConnection OPEN to host '+roomCode);
       setConnectMsg('Connected. Joining lobby…');
       hostConn.send({type:'join',name:safeName()});
     });
-    hostConn.on('data',handleClientMessage);
-    hostConn.on('close',()=>setConnectMsg('Host disconnected.'));
+    hostConn.on('data',m=>{debug('RX from host: '+m.type+(m.view?' phase='+m.view.phase:''));handleClientMessage(m)});
+    hostConn.on('close',()=>{debug('Host connection CLOSED');setConnectMsg('Host disconnected.');});
     hostConn.on('error',()=>setConnectMsg('Room connection failed.'));
   });
 
@@ -409,6 +426,7 @@ function broadcastLobby(){
 }
 
 function handleHostMessage(conn,m){
+  debug('RX from client: '+m.type);
   if(m.type==='join'){
     const id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
     conns[id]=conn;
@@ -429,6 +447,7 @@ function handleHostMessage(conn,m){
 }
 
 function handleClientMessage(m){
+  debug('handleClientMessage '+m.type);
   if(m.type==='joined'){
     myId=m.id;
     lobby=m.lobby;
@@ -460,6 +479,7 @@ function makeDeck(n){
 }
 
 function startDeal(){
+  debug('DEAL tapped. lobby='+lobby.length);
   if(!isHost||lobby.length<2)return;
 
   const deck=makeDeck(lobby.length);
@@ -479,6 +499,7 @@ function startDeal(){
 }
 
 function hostSwap(id,aId,bId){
+  debug('hostSwap '+id);
   if(!hostState||hostState.phase!=='setup')return;
   const p=hostState.players.find(x=>x.id===id);
   if(!p||p.ready)return;
@@ -498,6 +519,7 @@ function hostSwap(id,aId,bId){
 }
 
 function hostReady(id){
+  debug('hostReady '+id);
   if(!hostState||hostState.phase!=='setup')return;
   const p=hostState.players.find(x=>x.id===id);
   if(!p)return;
@@ -512,6 +534,7 @@ function hostReady(id){
 }
 
 function beginPlay(){
+  debug('beginPlay');
   hostState.phase='play';
 
   let starters=[];
@@ -559,18 +582,20 @@ function viewFor(id){
 }
 
 function pushAllViews(){
+  debug('pushAllViews phase='+(hostState?.phase||'none')+' conns='+Object.keys(conns).length);
   if(!hostState)return;
 
   viewState=viewFor('p0');
   renderState();
 
   Object.entries(conns).forEach(([id,c])=>{
-    if(c.open)c.send({type:'view',view:viewFor(id)});
+    if(c.open){debug('TX view to '+id+' phase='+hostState.phase);c.send({type:'view',view:viewFor(id)});}else{debug('conn '+id+' NOT OPEN')}
   });
 }
 
 function renderState(){
   if(!viewState)return;
+  debug('renderState phase='+viewState.phase);
   hide($('home'));hide($('lobby'));hide($('setup'));hide($('game'));
 
   if(viewState.phase==='setup'){
@@ -601,6 +626,7 @@ function renderSetup(){
 }
 
 function setupTap(id){
+  debug('setupTap '+id);
   if(!viewState||viewState.me.ready)return;
 
   const zone=viewState.me.hand.some(c=>c.id===id)?'hand':
@@ -628,8 +654,8 @@ function setupTap(id){
   const a=selectedSetup.id,b=id;
   selectedSetup=null;
 
-  if(isHost)hostSwap('p0',a,b);
-  else sendHost({type:'swap',id:myId,a,b});
+  if(isHost){debug('host local swap request');hostSwap('p0',a,b);}
+  else{debug('TX swap to host');sendHost({type:'swap',id:myId,a,b});}
 }
 
 function meaningfulTop(){
@@ -912,11 +938,13 @@ $('playBtn').onclick=doPlay;
 $('pickupBtn').onclick=doPickup;
 </script>
 
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
-}
-</script>
+
+
+
+<div id="debugPanel" style="position:fixed;right:6px;bottom:6px;z-index:9999;width:min(92vw,430px);max-height:150px;overflow:auto;background:rgba(0,0,0,.88);color:#d8ffd8;border:1px solid rgba(255,255,255,.25);border-radius:9px;padding:7px;font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace">
+  <div style="display:flex;justify-content:space-between;gap:8px"><strong>MP DEBUG v13</strong><span id="debugRole">starting</span></div>
+  <div id="debugLog"></div>
+</div>
 
 </body>
 </html>
