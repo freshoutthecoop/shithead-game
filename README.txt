@@ -1,15 +1,13 @@
-Shithead v32
+Shithead v33
 
-4 rule:
-- A 4 is transparent for numerical legality AND repeats the effect of the card underneath it.
-- 8 -> 4 skips the next player again.
-- Two 4s played together on an 8 repeat the skip twice.
-- Joker -> 4 reverses direction again.
-- 7 -> 4 repeats the 7-or-lower restriction.
-- 2 -> 4 repeats the reset.
-- Ordinary rank -> 4 remains transparent to that rank.
-- Chains of 4s replay the underlying non-4 card's effect.
-- Four-of-a-kind still takes priority: four 4s clear the pile and the player goes again.
+New multiplayer rematch flow:
+- When a multiplayer game ends, each player sees a Play Again button.
+- A player who taps it is marked Ready.
+- The status shows how many players are ready.
+- When every player in the room selects Play Again, the host automatically starts a fresh setup/deal.
+- Same room and usernames are preserved.
+- Chat remains in the same room.
+- Turn history is reset for the rematch.
+- No new room code is needed.
 
-Keeps Firebase multiplayer, auth, global leaderboard, chat, turn history, sorted hands,
-10 of Diamonds app icon, and clearer Joker styling.
+All v32 rules and features remain.

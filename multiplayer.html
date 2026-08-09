@@ -88,7 +88,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v32 · 4 repeats card effect</div>
+<div class="small">Firebase multiplayer v33 · rematch</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -137,6 +137,11 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
     <div class="small">FACE DOWN</div><div id="yourDown" class="cards" style="margin:5px 0 10px"></div>
     <div class="small">HAND</div><div id="yourHand" class="cards" style="margin:5px 0 10px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up</button></div>
+    <div id="replayBox" class="panel hidden" style="margin-top:8px">
+      <div style="font-weight:800;margin-bottom:6px">Play again?</div>
+      <div id="replayStatus" class="small" style="margin-bottom:8px"></div>
+      <button id="replayBtn" class="btn primary" type="button">Play Again</button>
+    </div>
     <div class="chatBox">
       <div class="small" style="font-weight:800;margin-bottom:5px">GAME CHAT</div>
       <div id="chatMessages" class="chatMessages"></div>
@@ -310,7 +315,7 @@ function renderRoom(){
   $('roomCode').textContent=roomCode;
   if(room.phase==='lobby'){showOnly('lobby');renderLobby()}
   else if(room.phase==='setup'){showOnly('setup');renderSetup()}
-  else {showOnly('game');renderGame();renderHistory();renderChat()}
+  else {showOnly('game');renderGame();renderHistory();renderChat();renderReplay()}
 }
 
 function renderLobby(){
@@ -751,6 +756,83 @@ async function playDown(id){
 }
 
 
+
+function renderReplay(){
+  const box=$('replayBox');
+  if(!box)return;
+  if(room?.phase!=='done'){
+    box.classList.add('hidden');
+    return;
+  }
+  box.classList.remove('hidden');
+
+  const players=getPlayers();
+  const readyIds=room?.replayReady||{};
+  const count=players.filter(p=>readyIds[p.id]).length;
+  const mine=!!readyIds[myId];
+
+  $('replayBtn').disabled=mine;
+  $('replayBtn').textContent=mine?'Ready ✓':'Play Again';
+  $('replayStatus').textContent=`${count} of ${players.length} player${players.length===1?'':'s'} ready`;
+
+  // Host starts the rematch only when everyone in the current room opts in.
+  if(isHost && players.length>=2 && count===players.length){
+    startRematch().catch(e=>setMsg(e.message));
+  }
+}
+
+async function requestReplay(){
+  await ensureAuth();
+  if(!roomRef||!room||room.phase!=='done')return;
+  await roomRef.child('replayReady/'+myId).set(true);
+}
+
+async function startRematch(){
+  if(!isHost)return;
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='done')return cur;
+    const players=normalizePlayers(cur.players);
+    const ready=cur.replayReady||{};
+    if(players.length<2 || !players.every(p=>ready[p.id]))return cur;
+
+    const deck=makeDeck(players.length);
+    const ps=players.map(p=>({
+      id:p.id,
+      uid:p.uid||p.id,
+      name:p.name,
+      hand:[],
+      face:[],
+      down:[],
+      ready:false,
+      finished:false
+    }));
+
+    for(let r=0;r<3;r++)for(const p of ps)p.down.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.face.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.hand.push(deck.pop());
+    ps.forEach(p=>{
+      p.hand=sortCards(p.hand);
+      p.face=sortCards(p.face);
+    });
+
+    cur.players=Object.fromEntries(ps.map(p=>[p.id,p]));
+    cur.game={
+      draw:deck,
+      pile:[],
+      current:null,
+      direction:1,
+      mustLow:false,
+      message:'Swap cards, then tap Ready.',
+      winnerOrder:[],
+      winnerRecorded:false
+    };
+    cur.phase='setup';
+    cur.replayReady=null;
+    cur.history=null;
+    addHistoryToRoom(cur,'Rematch started.','start');
+    return cur;
+  });
+}
 function addHistoryToRoom(cur,text,type='turn'){
   cur.history=cur.history||{};
   const key='h_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
@@ -832,6 +914,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('readyBtn').onclick=()=>ready().catch(e=>setMsg(e.message));
   $('playBtn').onclick=()=>playSelected().catch(e=>setMsg(e.message));
   $('pickupBtn').onclick=()=>pickup().catch(e=>setMsg(e.message));
+  $('replayBtn').onclick=()=>requestReplay().catch(e=>setMsg(e.message));
   $('chatSend').onclick=()=>sendChat().catch(e=>setMsg(e.message));
   $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat().catch(err=>setMsg(err.message))});
   $('helpBtn').onclick=()=>$('helpModal').classList.add('open');
