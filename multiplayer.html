@@ -88,7 +88,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
 <div class="wrap">
 <div><a href="index.html" style="color:white;text-decoration:none">← Modes</a></div>
 <h1>Shithead Multiplayer</h1>
-<div class="small">Firebase multiplayer v31 · chat above history</div>
+<div class="small">Firebase multiplayer v32 · 4 repeats card effect</div>
 <div class="topActions">
   <button id="helpBtn" class="btn" type="button">How to Play</button>
   <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
@@ -411,6 +411,15 @@ async function ready(){
   });
 }
 
+function replayTarget(g){
+  const pile=g.pile||[];
+  // Called after the newly played 4(s) are on the pile.
+  // Walk backward past all top 4s to find the card whose effect is being replayed.
+  for(let i=pile.length-1;i>=0;i--){
+    if(pile[i].rank!=='4')return pile[i];
+  }
+  return null;
+}
 function meaningfulTop(g){
   for(let i=(g.pile||[]).length-1;i>=0;i--){
     if(g.pile[i].rank!=='4' && g.pile[i].rank!=='JOKER')return g.pile[i];
@@ -541,6 +550,47 @@ async function playSelected(){
       return cur;
     }
 
+    if(rank==='4'){
+      const target=replayTarget(g);
+      if(target){
+        // Each 4 repeats the effect once.
+        if(target.rank==='8'){
+          g.mustLow=false;
+          drawUp(p,g);
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8 and repeated the skip.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8, repeating the skip ${cards.length} time${cards.length===1?'':'s'}.`,'skip');
+          finishCheck(cur,players,i);
+          if(cur.phase==='play')advance(g,players,cards.length+1);
+          cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+          return cur;
+        }
+        if(target.rank==='JOKER'){
+          for(let k=0;k<cards.length;k++)g.direction*=-1;
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a Joker and reversed direction again.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a Joker, repeating the reversal ${cards.length} time${cards.length===1?'':'s'}.`,'reverse');
+        } else if(target.rank==='7'){
+          g.mustLow=true;
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 7. The next player must play 7 or lower.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 7, repeating the 7-or-lower rule.`,'play');
+        } else if(target.rank==='2'){
+          g.mustLow=false;
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 2, repeating the reset.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 2, repeating the reset.`,'play');
+        } else {
+          // Ordinary cards have no extra action; 4 remains transparent to their rank.
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on ${target.rank}.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on ${target.rank}.`,'play');
+        }
+      }
+      drawUp(p,g);
+      p.hand=sortCards(p.hand||[]);
+      p.face=sortCards(p.face||[]);
+      finishCheck(cur,players,i);
+      if(cur.phase==='play')advance(g,players,1);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
     if(rank==='JOKER'){
       for(let k=0;k<cards.length;k++)g.direction*=-1;
       addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' Jokers':'a Joker'} and reversed direction${cards.length>1?' accordingly':''}.`,'reverse');
@@ -628,6 +678,41 @@ async function playDown(id){
       g.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
       addHistoryToRoom(cur,`${p.name} blindly flipped ${rank} and made four in a row. Pile cleared.`,'clear');
       finishCheck(cur,players,i);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    if(rank==='4'){
+      const target=replayTarget(g);
+      if(target){
+        if(target.rank==='8'){
+          g.mustLow=false;
+          g.message=`${p.name} blindly flipped a 4 on an 8 and repeated the skip.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on an 8, repeating the skip.`,'skip');
+          finishCheck(cur,players,i);
+          if(cur.phase==='play')advance(g,players,2);
+          cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+          return cur;
+        }
+        if(target.rank==='JOKER'){
+          g.direction*=-1;
+          g.message=`${p.name} blindly flipped a 4 on a Joker and reversed direction again.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on a Joker, repeating the reversal.`,'reverse');
+        } else if(target.rank==='7'){
+          g.mustLow=true;
+          g.message=`${p.name} blindly flipped a 4 on a 7. The next player must play 7 or lower.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on a 7, repeating the 7-or-lower rule.`,'blind');
+        } else if(target.rank==='2'){
+          g.mustLow=false;
+          g.message=`${p.name} blindly flipped a 4 on a 2, repeating the reset.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on a 2, repeating the reset.`,'blind');
+        } else {
+          g.message=`${p.name} blindly flipped a 4 on ${target.rank}.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on ${target.rank}.`,'blind');
+        }
+      }
+      finishCheck(cur,players,i);
+      if(cur.phase==='play')advance(g,players,1);
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
       return cur;
     }

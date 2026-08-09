@@ -159,6 +159,12 @@ function startGame(){
   else{let best={v:99,i:0};G.players.forEach((p,i)=>p.hand.forEach(c=>{let v=value[c.rank]??15;if(v<best.v)best={v,i}}));G.current=best.i}
   G.message=`${G.players[G.current].name} goes first.`;render();maybeAITurn();
 }
+function replayTarget(){
+  for(let i=G.pile.length-1;i>=0;i--){
+    if(G.pile[i].rank!=='4')return G.pile[i];
+  }
+  return null;
+}
 function meaningfulTop(){
   for(let i=G.pile.length-1;i>=0;i--){
     if(G.pile[i].rank!=='4' && G.pile[i].rank!=='JOKER')return G.pile[i];
@@ -217,6 +223,40 @@ function playCards(i,cards){
   }
 
   let clear=false,sameTurn=false;
+
+  if(rank==='4'){
+    const target=replayTarget();
+    if(target){
+      if(target.rank==='8'){
+        G.mustLow=false;
+        drawUp(p);
+        checkFinish(i);
+        G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8 and repeated the skip.`;
+        advance(cards.length+1);
+        render();
+        maybeAITurn();
+        return true;
+      }
+      if(target.rank==='JOKER'){
+        for(let k=0;k<cards.length;k++)G.direction*=-1;
+        G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a Joker and reversed direction again.`;
+      } else if(target.rank==='7'){
+        G.mustLow=true;
+        G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 7. Next player must play 7 or lower.`;
+      } else if(target.rank==='2'){
+        G.mustLow=false;
+        G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 2 and repeated the reset.`;
+      } else {
+        G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on ${target.rank}.`;
+      }
+    }
+    drawUp(p);
+    checkFinish(i);
+    advance(1);
+    render();
+    maybeAITurn();
+    return true;
+  }
 
   if(rank==='JOKER'){
     for(let k=0;k<cards.length;k++)G.direction*=-1;
