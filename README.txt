@@ -1,15 +1,14 @@
-Shithead iPhone App
+Shithead iPhone App - Compact Layout
 
-Modes:
-- Single Player: play against computers.
-- Multiplayer: host or join with a room code.
+Changes in this version:
+- Other players appear in a compact horizontal strip at the top.
+- Opponent total-card counts remain prominent.
+- Opponent face-up cards are shown as mini cards.
+- The draw pile and play pile take less vertical space.
+- Your cards and Play/Pick Up buttons sit much closer to the top of the screen.
+- Your hand remains sorted from 2 through Ace, then Joker.
+- Includes Single Player and Multiplayer.
 
-Install on iPhone:
-1. Host this folder on an HTTPS website.
-2. Open index.html through that website in Safari.
-3. Tap Share → Add to Home Screen.
-4. Open Shithead from the Home Screen.
-
-Notes:
-- Multiplayer requires internet because it uses browser peer-to-peer connections.
-- Single Player can work offline after the app has been loaded once.
+Install:
+Host these files on HTTPS, open the site in Safari, then Share → Add to Home Screen.
+If replacing an older installed version, reload the hosted page once so iPhone receives the new cached layout.
