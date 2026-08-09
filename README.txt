@@ -1,12 +1,9 @@
-Shithead v50
+Shithead v51
 
-Global leaderboard update:
-- Most Wins leaderboard: ranked by first-place finishes.
-- Most Shitheads leaderboard: ranked by times a player is the final remaining player.
-- Each row also shows the player's other stat.
-- Only completed multiplayer games count toward Shithead totals.
-- Existing win counts are preserved.
-- Existing leaderboard entries without shithead data are treated as 0.
+Single-player layout fix:
+- Computer 1 and Computer 2 are now at the very top of the gameplay screen.
+- Their placement matches the opponent area in multiplayer.
+- Computer 1 stays above Computer 2 in a stable order.
+- Opponent card sizing/alignment remains the same in both modes.
 
-All v49 gameplay, layouts, difficulty, walkthrough, chat, turn history,
-rematch, Firebase auth, app icon, and card-rule fixes remain.
+All v50 features remain, including dual global leaderboards.

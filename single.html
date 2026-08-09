@@ -257,7 +257,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .historyBox > .small:first-child::after{content:'▾';float:right}
 .historyBox.open > .small:first-child::after{content:'▴'}
 
-/* v50: slightly larger opponent cards */
+/* v51: slightly larger opponent cards */
 #opponents .card{
   width:25px !important;
   height:35px !important;
@@ -269,7 +269,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 #opponents .suit{font-size:10px !important}
 #opponents .cards{gap:2px !important}
 
-/* v50 Joker: black/white reverse card */
+/* v51 Joker: black/white reverse card */
 .card.joker{
   background:#fff !important;
   color:#111 !important;
@@ -306,7 +306,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 #topCard .card.joker .suit::after{font-size:30px !important}
 
 
-/* v50: identical opponent strip layout in single + multiplayer */
+/* v51: identical opponent strip layout in single + multiplayer */
 #opponents{
   width:100% !important;
   display:flex !important;
@@ -384,7 +384,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 }
 
 
-/* v50 unified single/multiplayer game board */
+/* v51 unified single/multiplayer game board */
 .gameShell{
   display:flex;
   flex-direction:column;
@@ -491,6 +491,24 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
   border-color:#ffd166 !important;
   box-shadow:0 0 0 2px rgba(255,209,102,.22) !important;
 }
+
+/* v51: single-player opponents fixed at top, matching multiplayer */
+#game{
+  display:flex !important;
+  flex-direction:column !important;
+}
+#opponents{
+  order:-100 !important;
+  margin-top:0 !important;
+  margin-bottom:6px !important;
+}
+#opponents .player{
+  position:relative !important;
+}
+/* keep Computer 1 and Computer 2 stacked in stable seat order */
+#opponents .player:nth-child(1){order:1 !important}
+#opponents .player:nth-child(2){order:2 !important}
+
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
