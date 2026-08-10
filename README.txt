@@ -8,3 +8,6 @@ Main page update:
 - iPhone safe-area behavior remains intact.
 
 All v52 gameplay/features remain unchanged.
+
+
+v54: Restores the full Firebase multiplayer architecture, adds network-first cache updates, and keeps the latest single-player controls.

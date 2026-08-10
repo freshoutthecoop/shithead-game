@@ -4,367 +4,1623 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Shithead Multiplayer</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <style>
 :root{--bg:#0f5132;--panel:#0b3d28;--card:#fff;--ink:#111;--muted:#d7e6de;--accent:#ffd166;--danger:#ff6b6b}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(#0f5132,#0b3d28);color:white;min-height:100vh}
-button,input{font:inherit}.wrap{max-width:760px;margin:0 auto;padding:14px 12px 28px}
-h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;margin:10px 0}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.small{font-size:13px;color:var(--muted)}
-.status{min-height:42px;font-weight:700}.players{display:grid;grid-template-columns:1fr 1fr;gap:8px}.player{background:rgba(255,255,255,.08);border-radius:12px;padding:8px}
-.active{outline:2px solid var(--accent)}.finished{opacity:.5}.oppCount{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:32px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.16);font-size:18px;font-weight:900}.oppMeta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}.cards{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end}
-.card{width:56px;height:78px;background:var(--card);color:var(--ink);border-radius:8px;border:2px solid #ddd;display:flex;flex-direction:column;justify-content:space-between;padding:5px;font-weight:800;box-shadow:0 2px 5px rgba(0,0,0,.25);user-select:none}
-.card.red{color:#c62828}.card.back{background:repeating-linear-gradient(45deg,#1d3557,#1d3557 6px,#457b9d 6px,#457b9d 12px);border-color:#d8e2ef;color:transparent}
-.card.selectable{cursor:pointer}.card.selected{transform:translateY(-9px);outline:3px solid var(--accent)}.rank{font-size:20px;line-height:1}.suit{font-size:22px;align-self:flex-end}
-.pileCard{width:72px;height:100px}.center{display:flex;justify-content:center;align-items:center;text-align:center}.pileArea{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
-.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
-input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:none!important}.code{font-size:28px;font-weight:900;letter-spacing:3px}.notice{padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.08)}
-@media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
-.homeTitle{color:inherit;text-decoration:none;cursor:pointer}.homeTitle:visited{color:inherit}
+button,input{font:inherit}.wrap{max-width:760px;margin:0 auto;padding:12px}
+h1{margin:4px 0 8px}.panel{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;margin:10px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.small{font-size:13px;color:var(--muted)}
+.btn{border:0;border-radius:10px;padding:11px 13px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.45}
+input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:none!important}.code{font-size:28px;font-weight:900;letter-spacing:3px}
+.players{display:grid;grid-template-columns:1fr;gap:4px}.player{background:rgba(255,255,255,.08);border-radius:9px;padding:6px}
+.cards{display:flex;gap:5px;flex-wrap:wrap}.card{width:54px;height:76px;background:white;color:#111;border-radius:8px;border:2px solid #ddd;padding:5px;display:flex;flex-direction:column;justify-content:space-between;font-weight:800;user-select:none}
+.card.red{color:#c62828}.card.back{background:repeating-linear-gradient(45deg,#1d3557,#1d3557 6px,#457b9d 6px,#457b9d 12px);color:transparent;border-color:#d8e2ef}
+.card.selectable{cursor:pointer}.card.selected{transform:translateY(-7px);outline:3px solid var(--accent)}
+.rank{font-size:19px}.suit{font-size:21px;align-self:flex-end}.status{font-weight:800;min-height:30px}
+.pile{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}.center{text-align:center}
+.active{outline:2px solid var(--accent)}.finished{opacity:.55}
+.topActions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+.modalBack{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:22px 12px;overflow:auto;z-index:10000}
+.modalBack.open{display:flex}.modal{width:100%;max-width:640px;background:#123f2d;border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:16px}
+.modal p,.modal li{line-height:1.45}.leaderRow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)}
+@media(max-width:650px){
+  .wrap{padding:8px}.panel{padding:8px;margin:6px 0}
+  #opponents{display:grid!important;grid-template-columns:1fr!important;gap:3px!important}
+  #opponents .player{display:grid!important;grid-template-columns:minmax(78px,1fr) auto minmax(110px,auto) minmax(68px,auto);align-items:center;gap:5px;padding:4px 6px}
+  #opponents .cards{gap:1px;flex-wrap:nowrap;justify-content:flex-end}
+  #opponents .card{width:21px;height:29px;padding:1px;border-width:1px}
+  #opponents .rank,#opponents .suit{font-size:8px}
+  #opponents .small{font-size:10px;white-space:nowrap}
+  #opponents .name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 
+.chatBox{margin-top:8px;background:rgba(0,0,0,.14);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px}
+.chatMessages{max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:7px}
+.chatMessage{font-size:13px;line-height:1.35}
+.chatMessage strong{margin-right:4px}
+.chatRow{display:grid;grid-template-columns:1fr auto;gap:6px}
+.chatRow input{width:100%}
+@media(max-width:650px){
+  .chatMessages{max-height:120px}
+}
+
+.historyBox{margin-top:8px;background:rgba(0,0,0,.14);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px}
+.historyList{max-height:170px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.historyItem{font-size:12px;line-height:1.35;color:#eef6f1}
+.historyItem .time{color:var(--muted);margin-right:5px}
+@media(max-width:650px){.historyList{max-height:130px}}
+
+.card.joker{
+  background:linear-gradient(145deg,#fff8d8,#ffffff);
+  color:#6a1b9a;
+  border:3px solid #ffd166;
+  box-shadow:inset 0 0 0 2px #6a1b9a,0 2px 6px rgba(0,0,0,.25);
+}
+.card.joker .rank{
+  font-size:14px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:-.5px;
+}
+.card.joker .suit{
+  font-size:27px;
+  line-height:1;
+  align-self:center;
+}
+@media(max-width:650px){
+  #opponents .card.joker{border-width:2px}
+  #opponents .card.joker .rank{font-size:7px}
+  #opponents .card.joker .suit{font-size:11px}
+}
+
+.chatTitleRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.chatBadge{display:none;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#d62828;color:white;font-size:12px;font-weight:900;align-items:center;justify-content:center}
+.chatBadge.show{display:inline-flex}
+.chatToast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;max-width:min(92vw,420px);background:#fff;color:#17221c;border-radius:12px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.3);font-size:13px;font-weight:700;display:none}
+.chatToast.show{display:block}
+
+/* v37 compact phone layout */
+#game{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+#opponents{
+  display:flex !important;
+  flex-direction:column;
+  gap:3px !important;
+}
+#opponents .player{
+  display:grid !important;
+  grid-template-columns:minmax(78px,1fr) auto auto minmax(74px,auto);
+  align-items:center;
+  gap:5px;
+  padding:4px 6px !important;
+  min-height:36px;
+}
+#opponents .name{font-size:12px;font-weight:900}
+#opponents .small{font-size:9px !important}
+#opponents .cards{gap:1px !important;flex-wrap:nowrap !important;justify-content:flex-end}
+#opponents .card{width:19px !important;height:27px !important;padding:1px !important;border-width:1px !important}
+#opponents .rank,#opponents .suit{font-size:8px !important}
+
+.pile{
+  order:2;
+  padding:6px 9px !important;
+  border-radius:10px !important;
+  min-height:72px;
+}
+#topCard .card{
+  width:46px !important;
+  height:64px !important;
+  padding:3px !important;
+}
+#topCard .rank{font-size:15px !important}
+#topCard .suit{font-size:16px !important}
+
+#game > .panel:last-of-type{
+  order:3;
+  padding:6px !important;
+  margin:0 !important;
+  border-radius:10px !important;
+}
+
+#status{
+  padding:6px 8px;
+  background:rgba(255,255,255,.08);
+  border-radius:8px;
+  font-size:12px;
+  margin-bottom:5px;
+}
+
+#yourFace,#yourDown{
+  margin:3px 0 6px !important;
+  gap:3px !important;
+  flex-wrap:nowrap !important;
+}
+#yourFace .card,#yourDown .card{
+  width:31px !important;
+  height:43px !important;
+  padding:2px !important;
+  border-radius:5px !important;
+}
+#yourFace .rank,#yourDown .rank{font-size:10px !important}
+#yourFace .suit,#yourDown .suit{font-size:11px !important}
+
+/* Hand as an overlapping horizontal tray */
+#yourHand{
+  margin:4px 0 8px !important;
+  padding:5px 8px 8px 2px !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:visible !important;
+  min-height:80px;
+  align-items:flex-end;
+}
+#yourHand .card{
+  width:52px !important;
+  height:72px !important;
+  flex:0 0 auto !important;
+  margin-left:-18px !important;
+  position:relative;
+  z-index:1;
+}
+#yourHand .card:first-child{margin-left:0 !important}
+#yourHand .card.selected{transform:translateY(-7px);z-index:30}
+#yourHand .card:hover{z-index:20}
+#yourHand .rank{font-size:15px !important}
+#yourHand .suit{font-size:17px !important}
+
+#game .row:has(#playBtn){
+  display:grid !important;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+#playBtn,#pickupBtn{
+  padding:9px 8px !important;
+  font-size:14px !important;
+}
+
+/* Chat and history become collapsible bars */
+.chatBox,.historyBox{
+  padding:0 !important;
+  margin-top:6px !important;
+  border-radius:9px !important;
+  overflow:hidden;
+}
+.chatTitleRow,
+.historyBox > .small:first-child{
+  padding:8px 9px;
+  margin:0 !important;
+  background:rgba(0,0,0,.10);
+  cursor:pointer;
+}
+.chatMessages,.chatRow,.historyList{
+  display:none;
+}
+.chatBox.open .chatMessages,
+.chatBox.open .chatRow,
+.historyBox.open .historyList{
+  display:flex;
+}
+.chatBox.open .chatRow{
+  display:grid;
+  padding:0 8px 8px;
+}
+.chatBox.open .chatMessages{
+  padding:8px;
+  max-height:120px;
+}
+.historyBox.open .historyList{
+  padding:8px;
+  max-height:130px;
+}
+.chatTitleRow::after,
+.historyBox > .small:first-child::after{
+  content:'▾';
+  float:right;
+  color:#fff;
+}
+.chatBox.open .chatTitleRow::after,
+.historyBox.open > .small:first-child::after{
+  content:'▴';
+}
+
+/* replay box stays compact */
+#replayBox{
+  padding:8px !important;
+  margin-top:6px !important;
+}
+
+@media(max-width:650px){
+  .wrap{padding:6px !important}
+  h1{font-size:19px;margin:2px 0 4px}
+  .topActions{margin-bottom:4px}
+  .topActions .btn{padding:7px 9px;font-size:12px}
+}
+
+.card.playableHint{
+  outline:3px solid #7CFC98 !important;
+  box-shadow:0 0 0 2px rgba(124,252,152,.25),0 2px 6px rgba(0,0,0,.2) !important;
+}
+.walkHintText{
+  font-size:10px;
+  color:#dfffe7;
+  margin-top:4px;
+}
+
+/* v41 Joker: recognizable playing-card face */
+.card.joker{
+  background:#fff !important;
+  color:#6a1b9a !important;
+  border:2px solid #6a1b9a !important;
+  position:relative;
+  overflow:hidden;
+}
+.card.joker .rank{
+  font-size:10px !important;
+  font-weight:1000 !important;
+  letter-spacing:-.4px;
+  align-self:flex-start;
+}
+.card.joker .suit{
+  font-size:0 !important;
+  align-self:center !important;
+}
+.card.joker .suit::after{
+  content:'🤡';
+  font-size:28px;
+  line-height:1;
+  display:block;
+  filter:saturate(1.15);
+}
+#yourHand .card.joker .rank{font-size:10px !important}
+#yourHand .card.joker .suit::after{font-size:31px}
+#yourFace .card.joker .rank,
+#yourDown .card.joker .rank{font-size:7px !important}
+#yourFace .card.joker .suit::after,
+#yourDown .card.joker .suit::after{font-size:17px}
+#opponents .card.joker .rank{font-size:5px !important}
+#opponents .card.joker .suit::after{font-size:10px}
+#topCard .card.joker .rank{font-size:9px !important}
+#topCard .card.joker .suit::after{font-size:28px}
+
+
+#replayBox{
+  display:block;
+  border:2px solid #ffd166 !important;
+  background:rgba(255,209,102,.12) !important;
+}
+#replayBox.hidden{display:none !important}
+#replayBtn{width:100%;font-size:15px;padding:10px}
+
+/* v46: slightly larger opponent cards */
+#opponents .card{
+  width:25px !important;
+  height:35px !important;
+  min-width:25px !important;
+  padding:2px !important;
+  border-radius:4px !important;
+}
+#opponents .rank{font-size:9px !important}
+#opponents .suit{font-size:10px !important}
+#opponents .cards{gap:2px !important}
+
+/* v46 Joker: black/white reverse card */
+.card.joker{
+  background:#fff !important;
+  color:#111 !important;
+  border:2px solid #111 !important;
+  box-shadow:0 2px 5px rgba(0,0,0,.22) !important;
+}
+.card.joker .rank{
+  color:#111 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.35px !important;
+}
+.card.joker .suit{
+  font-size:0 !important;
+  color:#111 !important;
+  align-self:center !important;
+}
+.card.joker .suit::after{
+  content:'⇄' !important;
+  color:#111 !important;
+  font-family:Arial,Helvetica,sans-serif !important;
+  font-weight:900 !important;
+  font-size:29px !important;
+  line-height:1 !important;
+  display:block !important;
+  transform:rotate(-18deg);
+}
+#yourHand .card.joker .rank{font-size:10px !important}
+#yourHand .card.joker .suit::after{font-size:32px !important}
+#yourFace .card.joker .rank{font-size:7px !important}
+#yourFace .card.joker .suit::after{font-size:18px !important}
+#opponents .card.joker .rank{font-size:6px !important}
+#opponents .card.joker .suit::after{font-size:14px !important}
+#topCard .card.joker .rank{font-size:9px !important}
+#topCard .card.joker .suit::after{font-size:30px !important}
+
+
+/* v46: identical opponent strip layout in single + multiplayer */
+#opponents{
+  width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:4px !important;
+}
+#opponents .player{
+  width:100% !important;
+  display:grid !important;
+  grid-template-columns: minmax(88px,1fr) 58px 88px 118px !important;
+  align-items:center !important;
+  gap:6px !important;
+  min-height:48px !important;
+  padding:5px 7px !important;
+  border-radius:9px !important;
+}
+#opponents .name{
+  font-size:13px !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#opponents .count{
+  font-size:11px !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+#opponents .small{
+  font-size:10px !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+#opponents .cards{
+  width:118px !important;
+  min-width:118px !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:3px !important;
+  flex-wrap:nowrap !important;
+}
+#opponents .card{
+  width:32px !important;
+  height:44px !important;
+  min-width:32px !important;
+  padding:2px !important;
+  border-width:1px !important;
+  border-radius:5px !important;
+  margin:0 !important;
+}
+#opponents .rank{font-size:11px !important}
+#opponents .suit{font-size:12px !important}
+#opponents .card.joker .rank{font-size:7px !important}
+#opponents .card.joker .suit::after{font-size:18px !important}
+
+@media(max-width:430px){
+  #opponents .player{
+    grid-template-columns:minmax(72px,1fr) 50px 72px 105px !important;
+    gap:4px !important;
+  }
+  #opponents .cards{
+    width:105px !important;
+    min-width:105px !important;
+    gap:2px !important;
+  }
+  #opponents .card{
+    width:29px !important;
+    height:40px !important;
+    min-width:29px !important;
+  }
+  #opponents .rank{font-size:10px !important}
+  #opponents .suit{font-size:11px !important}
+}
+
+
+/* v47 unified single/multiplayer game board */
+.gameShell{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.boardTop{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:8px;
+  background:rgba(0,0,0,.16);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  padding:6px 9px;
+}
+.boardStatLabel{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.06em}
+.boardStatBig{font-size:20px;font-weight:900}
+.boardRight{text-align:right}
+.boardRight .boardStatBig{color:var(--accent)}
+.yourArea{
+  background:rgba(0,0,0,.16);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  padding:6px;
+}
+.yourTableGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+}
+.yourZone{
+  background:rgba(255,255,255,.04);
+  border-radius:7px;
+  padding:4px;
+}
+.zoneHdr{
+  font-size:9px;
+  font-weight:900;
+  color:var(--muted);
+  letter-spacing:.05em;
+  margin-bottom:3px;
+}
+.blindReveal{
+  position:fixed;
+  inset:0;
+  z-index:9998;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  background:rgba(0,0,0,.28);
+}
+.blindReveal.show{display:flex}
+.blindRevealCard{
+  background:#123f2d;
+  border:2px solid #ffd166;
+  border-radius:16px;
+  padding:16px 20px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+.blindRevealTitle{
+  font-size:13px;
+  font-weight:1000;
+  margin-bottom:10px;
+  letter-spacing:.04em;
+}
+.blindReveal .card{
+  margin:0 auto;
+  width:72px !important;
+  height:100px !important;
+}
+.blindReveal .rank{font-size:21px !important}
+.blindReveal .suit{font-size:24px !important}
+
+
+/* v53: iPhone notch / Dynamic Island / Home indicator safe areas */
+html{
+  background:#0f5132;
+}
+body{
+  padding-top:env(safe-area-inset-top, 0px) !important;
+  padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+  padding-left:env(safe-area-inset-left, 0px) !important;
+  padding-right:env(safe-area-inset-right, 0px) !important;
+  min-height:100dvh !important;
+}
+.wrap{
+  padding-top:max(8px, env(safe-area-inset-top, 0px)) !important;
+  padding-bottom:max(12px, env(safe-area-inset-bottom, 0px)) !important;
+}
+@media(max-width:650px){
+  .wrap{
+    padding-top:max(8px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom:max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-left:max(6px, env(safe-area-inset-left, 0px)) !important;
+    padding-right:max(6px, env(safe-area-inset-right, 0px)) !important;
+  }
+}
+/* Keep temporary overlays below the Dynamic Island too */
+.chatToast{
+  top:max(14px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+}
+.blindReveal{
+  padding-top:env(safe-area-inset-top, 0px) !important;
+  padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+}
+.modalBack{
+  padding-top:max(22px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+  padding-bottom:max(22px, calc(env(safe-area-inset-bottom, 0px) + 12px)) !important;
+}
+
+
+.homeTitle{color:inherit;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.homeTitle:visited{color:inherit}
+.homeTitle:active{opacity:.75}
 </style>
+<link rel="icon" type="image/png" href="favicon.png?v=29">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shithead">
+<link rel="manifest" href="manifest.webmanifest?v=29">
 </head>
 <body>
+<div id="blindReveal" class="blindReveal">
+  <div class="blindRevealCard">
+    <div id="blindRevealTitle" class="blindRevealTitle">BLIND FLIP</div>
+    <div id="blindRevealCard"></div>
+  </div>
+</div>
+<div id="chatToast" class="chatToast"></div>
 <div class="wrap">
 <h1><a href="./index.html" class="homeTitle" aria-label="Back to home">Shithead</a></h1>
+<div class="small" style="font-weight:800;margin-top:-6px">Multiplayer</div>
+<div class="small">Firebase multiplayer v54 · synced rooms</div>
+<div class="topActions">
+  <button id="helpBtn" class="btn" type="button">How to Play</button>
+  <button id="leaderBtn" class="btn" type="button" disabled>Leaderboard</button>
+</div>
 
 <div id="home" class="panel">
   <div class="row">
-    <input id="nameInput" placeholder="Your name" maxlength="18" />
-    <button id="hostBtn" class="btn primary">Host Game</button>
+    <input id="nameInput" placeholder="Username" maxlength="18" />
+    <button id="hostBtn" class="btn primary" disabled>Host Game</button>
   </div>
-  <div class="small" style="margin:10px 0 6px">or join someone else's game</div>
+  <div class="small" style="margin:10px 0 5px">or join a room</div>
   <div class="row">
-    <input id="roomInput" placeholder="Room code" maxlength="8" style="text-transform:uppercase"/>
-    <button id="joinBtn" class="btn">Join Game</button>
+    <input id="roomInput" placeholder="Room code" maxlength="8" style="text-transform:uppercase" />
+    <button id="joinBtn" class="btn" disabled>Join Game</button>
   </div>
-  <div id="connectMsg" class="small" style="margin-top:10px"></div>
+  <div id="connectMsg" style="margin-top:10px;min-height:22px;font-weight:800;color:#fff2c2"></div>
 </div>
 
 <div id="lobby" class="panel hidden">
-  <div class="between row">
-    <div>
-      <div class="small">ROOM CODE</div>
-      <div id="roomCode" class="code"></div>
-    </div>
-    <div id="hostOnly" class="hidden"><button id="startBtn" class="btn primary">Deal Cards</button></div>
-  </div>
-  <div class="small" style="margin-top:8px">Share the room code. Everyone stays on this page while playing.</div>
-  <div id="lobbyPlayers" style="margin-top:12px"></div>
+  <div class="small">ROOM CODE</div>
+  <div id="roomCode" class="code"></div>
+  <div id="lobbyPlayers" style="margin-top:10px"></div>
+  <button id="dealBtn" class="btn primary hidden" style="margin-top:10px">Deal Cards</button>
 </div>
 
 <div id="setup" class="panel hidden">
   <div style="font-weight:800">Choose your face-up cards</div>
   <div class="small">Tap a card in your hand, then a face-up card to swap.</div>
-  <div class="small" style="margin-top:8px">YOUR FACE-UP CARDS</div><div id="setupFace" class="cards" style="margin:6px 0 12px"></div>
-  <div class="small">YOUR HAND</div><div id="setupHand" class="cards" style="margin:6px 0 12px"></div>
-  <div class="row"><button id="readyBtn" class="btn primary">Ready</button><span id="setupNote" class="small"></span></div>
+  <div class="small" style="margin-top:10px">FACE UP</div>
+  <div id="setupFace" class="cards" style="margin:5px 0 12px"></div>
+  <div class="small">HAND</div>
+  <div id="setupHand" class="cards" style="margin:5px 0 12px"></div>
+  <div class="row"><button id="readyBtn" class="btn primary">Ready</button><span id="setupMsg" class="small"></span></div>
 </div>
 
 <div id="game" class="hidden">
   <div id="opponents" class="players"></div>
-  <div class="panel pileArea">
-    <div><div class="small">DRAW PILE</div><div id="drawCount" style="font-size:26px;font-weight:900">0</div></div>
-    <div class="center"><div><div id="topCard"></div><div id="pileCount" class="small"></div></div></div>
-    <div style="text-align:right"><div class="small">DIRECTION</div><div id="direction" style="font-size:24px;font-weight:900">↻</div></div>
+  <div class="panel pile">
+    <div><div class="small">DRAW</div><div id="drawCount" style="font-size:24px;font-weight:900"></div></div>
+    <div class="center"><div id="topCard"></div><div id="pileCount" class="small"></div></div>
+    <div style="text-align:right"><div class="small">DIR</div><div id="direction" style="font-size:22px;font-weight:900"></div></div>
   </div>
   <div class="panel">
     <div id="status" class="status"></div>
-    <div class="small">YOUR FACE-UP CARDS</div><div id="yourFace" class="cards" style="margin:6px 0 12px"></div>
-    <div class="small">YOUR FACE-DOWN CARDS</div><div id="yourDown" class="cards" style="margin:6px 0 12px"></div>
-    <div class="small">YOUR HAND</div><div id="yourHand" class="cards" style="margin:6px 0 12px"></div>
-    <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up Pile</button></div>
-    <div id="rematchPanel" class="notice hidden" style="margin-top:12px"><div style="font-weight:800;margin-bottom:8px">Game over</div><div class="small" style="margin-bottom:10px">Play again with the same people?</div><button id="rematchBtn" class="btn primary" type="button">Play Again</button><div id="rematchNote" class="small" style="margin-top:8px"></div></div>
+    <div class="small">FACE UP</div><div id="yourFace" class="cards" style="margin:5px 0 10px"></div>
+    <div class="small">FACE DOWN</div><div id="yourDown" class="cards" style="margin:5px 0 10px"></div>
+    <div class="small">HAND</div><div id="yourHand" class="cards" style="margin:5px 0 10px"></div>
+    <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up</button></div>
+    <div id="replayBox" class="panel hidden" style="margin-top:8px">
+      <div style="font-weight:800;margin-bottom:6px">Play again?</div>
+      <div id="replayStatus" class="small" style="margin-bottom:8px"></div>
+      <button id="replayBtn" class="btn primary" type="button">Play Again</button>
+    </div>
+    <div class="chatBox">
+      <div class="chatTitleRow">
+        <div class="small" style="font-weight:800">GAME CHAT</div>
+        <span id="chatBadge" class="chatBadge">1</span>
+      </div>
+      <div id="chatMessages" class="chatMessages"></div>
+      <div class="chatRow">
+        <input id="chatInput" maxlength="180" placeholder="Message players…" />
+        <button id="chatSend" class="btn" type="button">Send</button>
+      </div>
+    </div>
+    <div class="historyBox">
+      <div class="small" style="font-weight:800;margin-bottom:5px">TURN HISTORY</div>
+      <div id="historyList" class="historyList"></div>
+    </div>
   </div>
 </div>
 </div>
 
+<div id="helpModal" class="modalBack">
+  <div class="modal">
+    <button id="helpClose" class="btn" type="button" style="float:right">Close</button>
+    <h2>How to Play</h2>
+    <h3>Using the interface</h3>
+    <ol>
+      <li>Enter a username. One player hosts and shares the room code; everyone else joins with that code.</li>
+      <li>The host taps Deal Cards after everyone is in the lobby.</li>
+      <li>During setup, tap one card in your hand and then one face-up card to swap them. Tap Ready when finished.</li>
+      <li>On your turn, tap one card or multiple cards of the same rank, then tap Play.</li>
+      <li>If you cannot or do not want to play, tap Pick Up.</li>
+      <li>When your hand is empty and the draw pile is gone, play face-up cards. Then tap face-down cards blindly.</li>
+    </ol>
+    <h3>Rules</h3>
+    <p>Normal play is the same rank or higher. A 2 resets the count. A 4 is transparent. A 7 makes the next player play 7 or lower. An 8 skips. A 10 clears the pile and cannot be played on a 7. A Joker reverses direction. Four matching ranks in a row clears the pile; transparent 4s do not interrupt the sequence.</p>
+    <p>While the draw pile remains, draw back up to 3 cards after your turn. The last player still holding cards is the Shithead.</p>
+  </div>
+</div>
+
+<div id="leaderModal" class="modalBack">
+  <div class="modal">
+    <button id="leaderClose" class="btn" type="button" style="float:right">Close</button>
+    <h2>Global Leaderboards</h2>
+    <div style="font-weight:900;margin:10px 0 4px">🏆 Most Wins</div>
+    <div id="leaderWinsRows"></div>
+    <div style="font-weight:900;margin:14px 0 4px">💩 Most Shitheads</div>
+    <div id="leaderShitheadRows"></div>
+    <div class="small" style="margin-top:10px">Wins = first player out. Shitheads = last player remaining in a completed multiplayer game.</div>
+  </div>
+</div>
+
 <script>
+const firebaseConfig = {"apiKey": "AIzaSyDDpDw3W4w2izXCi2a4PltZusEUtlPJ_4A", "authDomain": "shithead-game-5c332.firebaseapp.com", "databaseURL": "https://shithead-game-5c332-default-rtdb.firebaseio.com/", "projectId": "shithead-game-5c332", "storageBucket": "shithead-game-5c332.firebasestorage.app", "messagingSenderId": "1004520259081", "appId": "1:1004520259081:web:aa52509990f58b50d142d8", "measurementId": "G-53LYNRDSK0"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const auth=firebase.auth();
+let authUser=null;
+let lastSeenChatTs=0;
+let lastNotifiedChatKey=null;
+let unreadChat=0;
+let toastTimer=null;
+let authReadyResolve, authReadyReject;
+const authReady=new Promise((resolve,reject)=>{authReadyResolve=resolve;authReadyReject=reject});
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    authUser=user;
+    authReadyResolve(user);
+    const hostBtn=document.getElementById('hostBtn');
+    const joinBtn=document.getElementById('joinBtn');
+    const leaderBtn=document.getElementById('leaderBtn');
+    if(hostBtn)hostBtn.disabled=false;
+    if(joinBtn)joinBtn.disabled=false;
+    if(leaderBtn)leaderBtn.disabled=false;
+    const msg=document.getElementById('connectMsg');
+    if(msg && msg.textContent.includes('Signing'))msg.textContent='';
+  }
+},err=>{
+  authReadyReject(err);
+  const msg=document.getElementById('connectMsg');
+  if(msg)msg.textContent='Authentication failed: '+err.message;
+});
+
+async function initAnonymousAuth(){
+  if(auth.currentUser){
+    authUser=auth.currentUser;
+    return auth.currentUser;
+  }
+  try{
+    await auth.signInAnonymously();
+    return await authReady;
+  }catch(err){
+    throw new Error('Anonymous sign-in failed: '+err.message);
+  }
+}
+
+async function ensureAuth(){
+  if(authUser)return authUser;
+  return await authReady;
+}
+
 const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const suits=['♥','♦','♣','♠'];
 const val={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14,JOKER:15};
 const $=id=>document.getElementById(id);
 
-let peer=null, isHost=false, hostConn=null, conns={}, myId=null, roomCode=null;
-let lobby=[], state=null, selectedSetup=null, selectedPlay=[];
+let roomCode='', myId='', isHost=false, roomRef=null, room=null;
+let selectedSetup=null, selectedPlay=[];
+let lastBlindRevealTs=0;
+let walkthroughOn=false;
+let setupSwapPending=false;
 
-function safeName(){return ($('nameInput').value.trim()||'Player').slice(0,18)}
+function setMsg(s){$('connectMsg').textContent=s}
+function username(){
+  const n=$('nameInput').value.trim().slice(0,18);
+  if(!n){setMsg('Enter a username first.');$('nameInput').focus();return null}
+  return n;
+}
+function cleanRoom(v){return (v||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function makeRoom(){return 'SH'+Math.random().toString(36).slice(2,7).toUpperCase()}
-function cardHTML(c,opts={}){
-  const red=c.suit==='♥'||c.suit==='♦', txt=c.rank==='JOKER'?'🃏':c.rank;
-  return `<div class="card ${red?'red':''} ${opts.back?'back':''} ${opts.cls||''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':txt}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
+function makeId(){return authUser?.uid || ('p_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36))}
+function show(id){$(id).classList.remove('hidden')}
+function hide(id){$(id).classList.add('hidden')}
+function showOnly(id){['home','lobby','setup','game'].forEach(x=>x===id?show(x):hide(x))}
+function sortCards(a){const so={'♥':0,'♦':1,'♣':2,'♠':3,'':4};return [...(a||[])].sort((x,y)=>(val[x.rank]-val[y.rank])||((so[x.suit]??9)-(so[y.suit]??9)))}
+function cardHTML(c,o={}){
+  const red=c.suit==='♥'||c.suit==='♦', text=c.rank==='JOKER'?'🃏':c.rank;
+  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!o.back?'joker':''} ${o.back?'back':''} ${o.selectable?'selectable':''} ${o.playableHint?'playableHint':''}" data-id="${c.id||''}"><span class="rank">${o.back?'':(c.rank==='JOKER'?'JOKER':text)}</span><span class="suit">${o.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
 }
-function sortCards(cards){
-  const suitOrder={'♥':0,'♦':1,'♣':2,'♠':3,'':4};
-  return [...cards].sort((a,b)=>(val[a.rank]-val[b.rank]) || ((suitOrder[a.suit]??9)-(suitOrder[b.suit]??9)));
+function normalizePlayers(obj){
+  if(!obj)return [];
+  return Array.isArray(obj)?obj.filter(Boolean):Object.values(obj);
 }
-function sortPrivateCards(p){
-  p.hand=sortCards(p.hand);
-  p.face=sortCards(p.face);
+function getPlayers(){return normalizePlayers(room?.players)}
+function me(){return getPlayers().find(p=>p.id===myId)}
+function game(){return room?.game||null}
+
+function listenRoom(){
+  roomRef.on('value',snap=>{
+    const v=snap.val();
+    if(!v){setMsg('Room no longer exists.');return}
+    room=v;
+    if(room.lastBlindReveal?.ts && room.lastBlindReveal.ts>lastBlindRevealTs){
+      lastBlindRevealTs=room.lastBlindReveal.ts;
+      showBlindReveal(room.lastBlindReveal.name,room.lastBlindReveal.card);
+    }
+    renderRoom();
+  },err=>setMsg('Database error: '+err.message));
 }
 
-function show(el){el.classList.remove('hidden')} function hide(el){el.classList.add('hidden')}
+async function hostGame(){
+  const name=username();if(!name)return;
+  setMsg('Checking authentication…');
+  await ensureAuth();
+  roomCode=makeRoom();myId=makeId();isHost=true;
+  roomRef=db.ref('rooms/'+roomCode);
+  setMsg('Creating room…');
+  const existing=(await roomRef.once('value')).val();
+  if(existing){roomCode=makeRoom();roomRef=db.ref('rooms/'+roomCode)}
+  await roomRef.set({
+    hostId:myId,
+    hostUid:authUser.uid,
+    phase:'lobby',
+    createdAt:firebase.database.ServerValue.TIMESTAMP,
+    players:{[myId]:{id:myId,uid:authUser.uid,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP}}
+  });
+  listenRoom();setMsg('');
+}
 
-function hostGame(){
-  isHost=true; roomCode=makeRoom(); myId='p0';
-  peer=new Peer(roomCode.toLowerCase());
-  peer.on('open',()=>{lobby=[{id:'p0',name:safeName(),ready:false,conn:null}]; openLobby()});
-  peer.on('connection',c=>{
-    c.on('data',m=>handleHostMessage(c,m));
-    c.on('close',()=>removeConn(c.peer));
-  });
-  peer.on('error',e=>$('connectMsg').textContent='Connection error: '+e.type);
+async function joinGame(){
+  const name=username();if(!name)return;
+  setMsg('Checking authentication…');
+  await ensureAuth();
+  roomCode=cleanRoom($('roomInput').value);$('roomInput').value=roomCode;
+  if(!roomCode){setMsg('Enter the room code.');return}
+  roomRef=db.ref('rooms/'+roomCode);
+  setMsg('Joining room…');
+  const snap=await roomRef.once('value');
+  if(!snap.exists()){setMsg('No room matches that code.');return}
+  const data=snap.val();
+  if(data.phase!=='lobby'){setMsg('That game has already started.');return}
+  myId=makeId();isHost=false;
+  await roomRef.child('players/'+myId).set({id:myId,uid:authUser.uid,name,ready:false,joinedAt:firebase.database.ServerValue.TIMESTAMP});
+  listenRoom();setMsg('');
 }
-function joinGame(){
-  roomCode=$('roomInput').value.trim().toUpperCase();
-  if(!roomCode)return;
-  peer=new Peer();
-  peer.on('open',()=>{
-    hostConn=peer.connect(roomCode.toLowerCase(),{reliable:true});
-    hostConn.on('open',()=>hostConn.send({type:'join',name:safeName()}));
-    hostConn.on('data',handleClientMessage);
-    hostConn.on('close',()=>{$('connectMsg').textContent='Host disconnected.'});
-  });
-  peer.on('error',e=>$('connectMsg').textContent='Could not join: '+e.type);
+
+function renderRoom(){
+  if(!room)return;
+  $('roomCode').textContent=roomCode;
+  if(room.phase==='lobby'){showOnly('lobby');renderLobby()}
+  else if(room.phase==='setup'){showOnly('setup');renderSetup()}
+  else {showOnly('game');renderGame();renderHistory();renderChat();renderReplay()}
 }
-function openLobby(){hide($('home'));show($('lobby'));$('roomCode').textContent=roomCode;if(isHost)show($('hostOnly'));renderLobby()}
+
 function renderLobby(){
-  $('lobbyPlayers').innerHTML=lobby.map(p=>`<div class="notice" style="margin:6px 0">${p.name}${p.id==='p0'?' (host)':''}</div>`).join('');
-  if(isHost)$('startBtn').disabled=lobby.length<2;
+  const players=getPlayers();
+  $('lobbyPlayers').innerHTML=players.map(p=>`<div class="player"><strong>${p.name}</strong>${p.id===room.hostId?' (host)':''}</div>`).join('');
+  $('dealBtn').classList.toggle('hidden',!isHost);
+  $('dealBtn').disabled=!isHost||players.length<2;
 }
-function removeConn(peerId){
-  const p=lobby.find(x=>x.conn?.peer===peerId); if(!p)return;
-  lobby=lobby.filter(x=>x!==p); delete conns[p.id]; broadcast({type:'lobby',lobby:sanitizeLobby()}); renderLobby();
-}
-function sanitizeLobby(){return lobby.map(({id,name,ready})=>({id,name,ready}))}
-
-function handleHostMessage(conn,m){
-  if(m.type==='join'){
-    const id='p'+lobby.length;
-    lobby.push({id,name:(m.name||'Player').slice(0,18),ready:false,conn}); conns[id]=conn;
-    conn.send({type:'joined',id,roomCode,lobby:sanitizeLobby()});
-    broadcast({type:'lobby',lobby:sanitizeLobby()}); renderLobby();
-  } else if(m.type==='swap') hostSwap(m.id,m.a,m.b);
-  else if(m.type==='ready') hostReady(m.id);
-  else if(m.type==='play') hostPlayRequest(m.id,m.cardIds);
-  else if(m.type==='pickup') hostPickupRequest(m.id);
-  else if(m.type==='down') hostDownRequest(m.id,m.cardId);
-  else if(m.type==='rematch') hostRematch(m.id);
-}
-function handleClientMessage(m){
-  if(m.type==='joined'){myId=m.id;lobby=m.lobby;openLobby()}
-  else if(m.type==='lobby'){lobby=m.lobby;renderLobby()}
-  else if(m.type==='view'){state=m.view; renderState()}
-}
-function sendHost(m){hostConn?.send(m)}
-function broadcast(m){Object.values(conns).forEach(c=>c.open&&c.send(m))}
 
 function makeDeck(n){
-  const decks=Math.ceil(n/3), d=[];
+  const d=[], decks=Math.ceil(n/3);
   for(let k=0;k<decks;k++){
-    for(const s of suits) for(const r of ranks)d.push({rank:r,suit:s,id:`${k}-${s}-${r}-${Math.random()}`});
-    d.push({rank:'JOKER',suit:'',id:`${k}-J1-${Math.random()}`},{rank:'JOKER',suit:'',id:`${k}-J2-${Math.random()}`});
+    for(const s of suits)for(const r of ranks)d.push({rank:r,suit:s,id:`${k}-${s}-${r}-${Math.random()}`});
+    d.push({rank:'JOKER',suit:'',id:`${k}-j1-${Math.random()}`},{rank:'JOKER',suit:'',id:`${k}-j2-${Math.random()}`});
   }
   for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
   return d;
 }
-function startDeal(){
-  if(!isHost||lobby.length<2)return;
-  const deck=makeDeck(lobby.length), players=lobby.map(x=>({id:x.id,name:x.name,hand:[],face:[],down:[],ready:false,finished:false}));
-  for(let r=0;r<3;r++)for(const p of players)p.down.push(deck.pop());
-  for(let r=0;r<3;r++)for(const p of players)p.face.push(deck.pop());
-  for(let r=0;r<3;r++)for(const p of players)p.hand.push(deck.pop());
-  players.forEach(sortPrivateCards);
-  state={players,draw:deck,pile:[],current:null,direction:1,phase:'setup',mustLow:false,message:'Swap cards, then tap Ready.',winnerOrder:[]};
-  pushViews();
+
+async function deal(){
+  if(!isHost)return;
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='lobby')return cur;
+    const players=normalizePlayers(cur.players);
+    if(players.length<2)return cur;
+    const deck=makeDeck(players.length);
+    const ps=players.map(p=>({id:p.id,uid:p.uid||p.id,name:p.name,hand:[],face:[],down:[],ready:false,finished:false}));
+    for(let r=0;r<3;r++)for(const p of ps)p.down.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.face.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.hand.push(deck.pop());
+    ps.forEach(p=>{p.hand=sortCards(p.hand);p.face=sortCards(p.face)});
+    cur.players=Object.fromEntries(ps.map(p=>[p.id,p]));
+    cur.game={draw:deck,pile:[],current:null,direction:1,mustLow:false,message:'Swap cards, then tap Ready.',winnerOrder:[],winnerRecorded:false};
+    cur.phase='setup';
+    return cur;
+  });
 }
 
-function hostRematch(requesterId){
-  if(!isHost||state?.phase!=='done'||lobby.length<2)return;
-  startDeal();
+function renderSetup(){
+  const p=me();if(!p)return;
+  $('setupFace').innerHTML=sortCards(p.face).map(c=>cardHTML(c,{selectable:!p.ready})).join('');
+  $('setupHand').innerHTML=sortCards(p.hand).map(c=>cardHTML(c,{selectable:!p.ready})).join('');
+  $('readyBtn').disabled=!!p.ready;$('readyBtn').textContent=p.ready?'Ready ✓':'Ready';
+  $('setupMsg').textContent=p.ready?'Waiting for everyone…':(selectedSetup?'Now tap a card in the other row.':'');
+  document.querySelectorAll('#setup .card').forEach(el=>{
+    el.onclick=()=>setupTap(el.dataset.id);
+    el.classList.toggle('selected',selectedSetup?.id===el.dataset.id);
+  });
 }
 
-function hostSwap(id,aId,bId){
-  if(state?.phase!=='setup')return;const p=state.players.find(x=>x.id===id);if(!p||p.ready)return;
-  const ah=p.hand.findIndex(c=>c.id===aId), af=p.face.findIndex(c=>c.id===aId), bh=p.hand.findIndex(c=>c.id===bId), bf=p.face.findIndex(c=>c.id===bId);
-  if(ah>=0&&bf>=0)[p.hand[ah],p.face[bf]]=[p.face[bf],p.hand[ah]];
-  else if(af>=0&&bh>=0)[p.face[af],p.hand[bh]]=[p.hand[bh],p.face[af]];
-  sortPrivateCards(p);
-  pushViews();
+function setupTap(id){
+  const p=me();if(!p||p.ready||setupSwapPending)return;
+  const hand=sortCards(p.hand),face=sortCards(p.face);
+  const zone=hand.some(c=>c.id===id)?'hand':face.some(c=>c.id===id)?'face':null;
+  if(!zone)return;
+  if(!selectedSetup){selectedSetup={id,zone};renderSetup();return}
+  if(selectedSetup.id===id){selectedSetup=null;renderSetup();return}
+  if(selectedSetup.zone===zone){selectedSetup={id,zone};renderSetup();return}
+  const a=selectedSetup.id,b=id;selectedSetup=null;
+  doSwap(a,b);
 }
-function hostReady(id){
-  const p=state.players.find(x=>x.id===id);if(!p||state.phase!=='setup')return;p.ready=true;
-  if(state.players.every(x=>x.ready))beginPlay(); else pushViews();
-}
-function beginPlay(){
-  state.phase='play';
-  let starters=[];
-  state.players.forEach((p,i)=>p.hand.forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))starters.push(i)}));
-  if(starters.length)state.current=starters[Math.floor(Math.random()*starters.length)];
-  else{
-    let best={v:99,i:0};state.players.forEach((p,i)=>p.hand.forEach(c=>{const v=val[c.rank]??15;if(v<best.v)best={v,i}}));state.current=best.i;
+
+async function doSwap(a,b){
+  if(setupSwapPending)return;
+  setupSwapPending=true;
+  const msg=$('setupMsg');
+  if(msg)msg.textContent='Swapping…';
+  try{
+    await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='setup')return cur;
+    const p=cur.players?.[myId];if(!p||p.ready)return cur;
+    p.hand=p.hand||[];p.face=p.face||[];
+    const ah=p.hand.findIndex(c=>c.id===a),af=p.face.findIndex(c=>c.id===a),bh=p.hand.findIndex(c=>c.id===b),bf=p.face.findIndex(c=>c.id===b);
+    if(ah>=0&&bf>=0)[p.hand[ah],p.face[bf]]=[p.face[bf],p.hand[ah]];
+    else if(af>=0&&bh>=0)[p.face[af],p.hand[bh]]=[p.hand[bh],p.face[af]];
+    else return cur;
+    p.hand=sortCards(p.hand);p.face=sortCards(p.face);
+    return cur;
+    });
+  } finally {
+    setupSwapPending=false;
   }
-  state.message=`${state.players[state.current].name} goes first.`;pushViews();
 }
-function meaningfulTop(){for(let i=state.pile.length-1;i>=0;i--)if(state.pile[i].rank!=='4')return state.pile[i];return null}
-function consecutiveCount(rank){let n=0;for(let i=state.pile.length-1;i>=0;i--){const c=state.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
-function isMagic(c){return ['2','4','10','JOKER'].includes(c.rank)}
-function legal(c){
-  const top=meaningfulTop();if(!top)return true;
+
+async function ready(){
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='setup')return cur;
+    if(cur.players?.[myId])cur.players[myId].ready=true;
+    const players=normalizePlayers(cur.players);
+    if(players.length&&players.every(p=>p.ready)){
+      cur.phase='play';
+      let candidates=[];
+      players.forEach((p,i)=>(p.hand||[]).forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))candidates.push(i)}));
+      let current;
+      if(candidates.length)current=candidates[Math.floor(Math.random()*candidates.length)];
+      else{
+        let best={v:99,i:0};
+        players.forEach((p,i)=>(p.hand||[]).forEach(c=>{const x=val[c.rank]??15;if(x<best.v)best={v:x,i}}));
+        current=best.i;
+      }
+      cur.game.current=current;
+      cur.game.message=`${players[current].name} goes first.`;
+      addHistoryToRoom(cur,`${players[current].name} starts the game.`,'start');
+    }
+    return cur;
+  });
+}
+
+function replayTarget(g){
+  const pile=g.pile||[];
+  // Called after the newly played 4(s) are on the pile.
+  // Walk backward past all top 4s to find the card whose effect is being replayed.
+  for(let i=pile.length-1;i>=0;i--){
+    if(pile[i].rank!=='4')return pile[i];
+  }
+  return null;
+}
+function meaningfulTop(g){
+  for(let i=(g.pile||[]).length-1;i>=0;i--){
+    if(g.pile[i].rank!=='4' && g.pile[i].rank!=='JOKER')return g.pile[i];
+  }
+  return null;
+}
+function magic(c){return ['2','4','10','JOKER'].includes(c.rank)}
+function legal(c,g){
+  const top=meaningfulTop(g);if(!top)return true;
   if(c.rank==='10'&&top.rank==='7')return false;
-  if(isMagic(c))return true;
-  if(state.mustLow)return val[c.rank]<=7;
+  if(magic(c))return true;
+  // 4s and Jokers are transparent: the underlying meaningful card controls legality.
+  if(top.rank==='7')return val[c.rank]<=7;
   return val[c.rank]>=val[top.rank];
 }
-function activeZone(p){if(p.hand.length)return'hand';if(state.draw.length)return'hand';if(p.face.length)return'face';return'down'}
-function drawUp(p){while(state.draw.length&&p.hand.length<3)p.hand.push(state.draw.pop());p.hand=sortCards(p.hand)}
-function activeCount(){return state.players.filter(p=>!p.finished).length}
-function checkFinish(i){
-  const p=state.players[i];
-  if(!state.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;state.winnerOrder.push(i);state.message+=` ${p.name} is out!`}
+function activeZone(p,g){if((p.hand||[]).length)return'hand';if((g.draw||[]).length)return'hand';if((p.face||[]).length)return'face';return'down'}
+function consecutive(rank,g){
+  let n=0;
+  const pile=g.pile||[];
+  if(rank==='4'){
+    for(let i=pile.length-1;i>=0;i--){
+      if(pile[i].rank==='4')n++;
+      else break;
+    }
+    return n;
+  }
+  for(let i=pile.length-1;i>=0;i--){
+    const c=pile[i];
+    if(c.rank==='4')continue;
+    if(c.rank===rank)n++;
+    else break;
+  }
+  return n;
 }
-function advance(steps){
-  if(activeCount()<=1)return;
-  for(let s=0;s<steps;s++){
-    let tries=0;
+function drawUp(p,g){p.hand=p.hand||[];g.draw=g.draw||[];while(g.draw.length&&p.hand.length<3)p.hand.push(g.draw.pop());p.hand=sortCards(p.hand)}
+function activePlayers(players){return players.filter(p=>!p.finished)}
+function skipAdvance(g,players,skipCount){
+  const active=players.filter(p=>!p.finished);
+  if(active.length<=1)return;
+
+  // House rule: in a 2-player game, any 8 play skips the only opponent,
+  // so the player who played the 8(s) immediately gets another turn.
+  if(active.length===2){
+    return;
+  }
+
+  // With 3+ active players, skip exactly skipCount successive opponents,
+  // then land on the next active player.
+  let skipped=0;
+  while(skipped<skipCount){
     do{
-      state.current=(state.current+state.direction+state.players.length)%state.players.length;
-      tries++;
-    }while(state.players[state.current].finished&&tries<state.players.length);
+      g.current=(g.current+g.direction+players.length)%players.length;
+    }while(players[g.current].finished);
+    skipped++;
+  }
+  do{
+    g.current=(g.current+g.direction+players.length)%players.length;
+  }while(players[g.current].finished);
+}
+function advance(g,players,n){
+  for(let x=0;x<n;x++){let guard=0;do{g.current=(g.current+g.direction+players.length)%players.length;guard++}while(players[g.current].finished&&guard<=players.length)}
+}
+function keepOrAdvanceAfterFinish(cur,players,i){
+  if(cur.phase!=='play')return;
+  if(players[i]?.finished){
+    advance(cur.game,players,1);
   }
 }
-function normalizeCurrent(){
-  if(activeCount()>1&&state.players[state.current]?.finished)advance(1);
+function finishCheck(cur,players,i){
+  const p=players[i],g=cur.game;
+  if(!(g.draw||[]).length&&!(p.hand||[]).length&&!(p.face||[]).length&&!(p.down||[]).length&&!p.finished){
+    p.finished=true;g.winnerOrder=g.winnerOrder||[];g.winnerOrder.push(p.id);g.message+=` ${p.name} is out!`;
+    addHistoryToRoom(cur,`${p.name} is out of cards. Play continues without them.`,'out');
+    if(!g.winnerRecorded){
+      g.winnerRecorded=true;g.winnerName=p.name;
+    }
+  }
+  const active=activePlayers(players);
+  if(active.length<=1){
+    cur.phase='done';
+    g.message=`${active[0]?.name||'Nobody'} is the SHITHEAD.`;
+    addHistoryToRoom(cur,`${active[0]?.name||'Nobody'} is the SHITHEAD.`,'end');
+  }
+}
+async function recordWinnerIfNeeded(){
+  if(!room?.game?.winnerRecorded||!room.game.winnerName||room.game.leaderboardSaved)return;
+  await ensureAuth();
+  if(!isHost)return;
+  const name=room.game.winnerName;
+  const safe=name.toLowerCase().replace(/[.#$/\[\]]/g,'_');
+  const winRef=db.ref('leaderboard/'+safe);
+  await winRef.transaction(cur=>({
+    name,
+    wins:(cur?.wins||0)+1,
+    shitheads:(cur?.shitheads||0)
+  }));
+  await roomRef.child('game/leaderboardSaved').set(true);
 }
 
-function endIfNeeded(){if(activeCount()<=1){const loser=state.players.find(p=>!p.finished);state.phase='done';state.message=`${loser?.name||'Nobody'} is the SHITHEAD.`;return true}return false}
-function hostPlayRequest(id,cardIds){
-  if(state.phase!=='play')return;const i=state.players.findIndex(x=>x.id===id);if(i!==state.current)return;
-  const p=state.players[i],z=activeZone(p);if(z==='down')return;
-  const zone=p[z], cards=cardIds.map(cid=>zone.find(c=>c.id===cid)).filter(Boolean);
-  if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0]))return;
-  const rank=cards[0].rank;
-  cards.forEach(c=>{const ix=zone.findIndex(x=>x.id===c.id);zone.splice(ix,1);state.pile.push(c)});
-  let clear=false,same=false;
-  if(rank==='JOKER')for(let k=0;k<cards.length;k++)state.direction*=-1;
-  if(rank==='8'){
-    state.mustLow=false;drawUp(p);state.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`;checkFinish(i);
-    if(!endIfNeeded()){advance(cards.length+1);normalizeCurrent()}pushViews();return;
-  }
-  if(rank==='10'){clear=true;same=true}
-  if(rank==='2')state.mustLow=false;else if(rank==='7')state.mustLow=true;else if(rank==='4'){}else state.mustLow=false;
-  if(rank!=='4'&&consecutiveCount(rank)>=4){clear=true;same=true}
-  if(clear){state.pile=[];state.mustLow=false;state.message=`${p.name} cleared the pile and plays again.`}
-  else state.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
-  drawUp(p);checkFinish(i);
-  if(!endIfNeeded()){
-    if(!same||p.finished)advance(1);
-    normalizeCurrent();
-  }
-  pushViews();
-}
-function hostPickupRequest(id){
-  const i=state.players.findIndex(x=>x.id===id);if(state.phase!=='play'||i!==state.current||!state.pile.length)return;
-  const p=state.players[i];p.hand.push(...state.pile);p.hand=sortCards(p.hand);state.pile=[];state.mustLow=false;state.message=`${p.name} picked up the pile.`;advance(1);normalizeCurrent();pushViews();
-}
-function hostDownRequest(id,cardId){
-  const i=state.players.findIndex(x=>x.id===id);if(state.phase!=='play'||i!==state.current)return;
-  const p=state.players[i];if(activeZone(p)!=='down')return;const ix=p.down.findIndex(c=>c.id===cardId);if(ix<0)return;
-  const c=p.down.splice(ix,1)[0];
-  if(legal(c)){state.pile.push(c); hostResolveSingleDown(i,c);}
-  else{state.pile.push(c);p.hand.push(...state.pile);p.hand=sortCards(p.hand);state.pile=[];state.mustLow=false;state.message=`${p.name} flipped ${c.rank}, couldn't play it, and picked up the pile.`;advance(1);normalizeCurrent();pushViews()}
-}
-function hostResolveSingleDown(i,c){
-  const p=state.players[i],rank=c.rank;let clear=false,same=false;
-  if(rank==='JOKER')state.direction*=-1;
-  if(rank==='8'){state.mustLow=false;state.message=`${p.name} flipped an 8 and skipped the next player.`;checkFinish(i);if(!endIfNeeded()){advance(2);normalizeCurrent()}pushViews();return}
-  if(rank==='10'){clear=true;same=true}
-  if(rank==='2')state.mustLow=false;else if(rank==='7')state.mustLow=true;else if(rank==='4'){}else state.mustLow=false;
-  if(rank!=='4'&&consecutiveCount(rank)>=4){clear=true;same=true}
-  if(clear){state.pile=[];state.mustLow=false;state.message=`${p.name} cleared the pile and plays again.`}
-  else state.message=`${p.name} flipped ${rank}.`;
-  checkFinish(i);
-  if(!endIfNeeded()){
-    if(!same||p.finished)advance(1);
-    normalizeCurrent();
-  }
-  pushViews();
-}
-function viewFor(id){
-  const me=state.players.find(p=>p.id===id);
-  return {
-    phase:state.phase,current:state.current,direction:state.direction,message:state.message,drawCount:state.draw.length,
-    pile:state.pile, mustLow:state.mustLow,
-    me:{id:me.id,name:me.name,hand:sortCards(me.hand),face:sortCards(me.face),down:me.down.map(c=>({id:c.id})),ready:me.ready,finished:me.finished},
-    players:state.players.map((p,i)=>({id:p.id,name:p.name,face:p.face,downCount:p.down.length,handCount:p.hand.length,ready:p.ready,finished:p.finished,index:i}))
-  }
-}
-function pushViews(){
-  if(!state)return;
-  const hostView=viewFor('p0'); stateClientRender(hostView);
-  Object.entries(conns).forEach(([id,c])=>c.open&&c.send({type:'view',view:viewFor(id)}));
-}
-function stateClientRender(v){state=v;renderState()}
 
-function renderState(){
-  hide($('home'));hide($('lobby'));hide($('setup'));hide($('game'));
-  if(state.phase==='setup'){show($('setup'));renderSetup()}
-  else{show($('game'));renderGame()}
+function currentRequirement(g){
+  const top=meaningfulTop(g);
+  if(!top)return 'ANY';
+  if(top.rank==='7')return '≤7';
+  return top.rank+'+';
 }
-function renderSetup(){
-  $('setupFace').innerHTML=state.me.face.map(c=>cardHTML(c,{cls:state.me.ready?'':'selectable'})).join('');
-  $('setupHand').innerHTML=state.me.hand.map(c=>cardHTML(c,{cls:state.me.ready?'':'selectable'})).join('');
-  $('readyBtn').disabled=state.me.ready;$('readyBtn').textContent=state.me.ready?'Ready ✓':'Ready';
-  $('setupNote').textContent=state.me.ready?'Waiting for the other players…':'';
-  document.querySelectorAll('#setup .card').forEach(el=>el.onclick=()=>setupTap(el.dataset.id));
+
+function isPlayableHintCard(card,p,g,zone){
+  if(!walkthroughOn)return false;
+  if(room?.phase!=='play')return false;
+  const players=getPlayers();
+  const meIndex=players.findIndex(x=>x.id===myId);
+  if(g.current!==meIndex)return false;
+  if(zone==='down')return false; // face-down is blind; don't reveal legality
+  return legal(card,g);
 }
-function setupTap(id){
-  if(state.me.ready)return;
-  const inHand=state.me.hand.some(c=>c.id===id),zone=inHand?'hand':'face';
-  if(!selectedSetup){selectedSetup={id,zone};$('setupNote').textContent='Now tap a card in the other row.';return}
-  if(zone===selectedSetup.zone){selectedSetup={id,zone};return}
-  const a=selectedSetup.id,b=id;selectedSetup=null;$('setupNote').textContent='';
-  if(isHost)hostSwap('p0',a,b);else sendHost({type:'swap',id:myId,a,b});
+
+let blindRevealTimer=null;
+function showBlindReveal(name,card){
+  const wrap=$('blindReveal');
+  const title=$('blindRevealTitle');
+  const cardBox=$('blindRevealCard');
+  if(!wrap||!cardBox||!card)return;
+  title.textContent=`${name.toUpperCase()} BLIND FLIPPED`;
+  cardBox.innerHTML=cardHTML(card);
+  wrap.classList.add('show');
+  clearTimeout(blindRevealTimer);
+  blindRevealTimer=setTimeout(()=>wrap.classList.remove('show'),1600);
 }
 function renderGame(){
-  const meIndex=state.players.find(p=>p.id===state.me.id)?.index;
-  $('opponents').innerHTML=state.players.filter(p=>p.id!==state.me.id).map(p=>{
-    const total=p.handCount+p.face.length+p.downCount;
-    return `<div class="player ${state.current===p.index?'active':''} ${p.finished?'finished':''}">
-      <div class="oppMeta"><div style="font-weight:800">${p.name}${p.finished?' ✓':''}</div><div class="oppCount">${total} cards</div></div>
-      <div class="small">Hand ${p.handCount} · Face-up ${p.face.length} · Face-down ${p.downCount}</div>
-      <div class="cards" style="margin-top:7px">${p.face.map(c=>cardHTML(c)).join('')}</div>
+  recordWinnerIfNeeded().catch(()=>{});
+  recordShitheadIfNeeded().catch(()=>{});
+  const players=getPlayers(),p=me(),g=game();if(!p||!g)return;
+  const meIndex=players.findIndex(x=>x.id===myId);
+  $('opponents').innerHTML=players.filter(x=>x.id!==myId).map((x)=>{
+    const total=(x.hand||[]).length+(x.face||[]).length+(x.down||[]).length;
+    const idx=players.findIndex(q=>q.id===x.id);
+    return `<div class="player ${g.current===idx?'active':''} ${x.finished?'finished':''}">
+      <div class="name">${x.name}${x.finished?' ✓':''}</div>
+      <div><strong>${total}</strong> cards</div>
+      <div class="small">H ${(x.hand||[]).length} · U ${(x.face||[]).length} · D ${(x.down||[]).length}</div>
+      <div class="cards">${sortCards(x.face||[]).map(c=>cardHTML(c)).join('')}</div>
     </div>`;
   }).join('');
-  $('drawCount').textContent=state.drawCount;$('pileCount').textContent=`Pile: ${state.pile.length} card${state.pile.length===1?'':'s'}`;$('direction').textContent=state.direction===1?'↻':'↺';
-  const top=state.pile[state.pile.length-1];$('topCard').innerHTML=top?cardHTML(top,{cls:'pileCard'}):'<div class="small">Empty pile</div>';
-  $('status').textContent=state.message+(state.phase==='play'&&state.current===meIndex?' Your turn.':'');
-  const zone=state.me.hand.length?'hand':(state.drawCount?'hand':(state.me.face.length?'face':'down'));
-  $('yourFace').innerHTML=state.me.face.map(c=>cardHTML(c,{cls:zone==='face'&&state.current===meIndex?'selectable':''})).join('');
-  $('yourDown').innerHTML=state.me.down.map(c=>cardHTML(c,{back:true,cls:zone==='down'&&state.current===meIndex?'selectable':''})).join('');
-  $('yourHand').innerHTML=state.me.hand.map(c=>cardHTML(c,{cls:zone==='hand'&&state.current===meIndex?'selectable':''})).join('');
+  $('drawCount').textContent=(g.draw||[]).length;
+  $('direction').innerHTML=`<div style="font-size:9px;color:var(--muted);font-weight:800">PLAY</div><div style="font-size:20px;font-weight:900;color:var(--accent)">${currentRequirement(g)}</div><div style="font-size:10px;color:var(--muted)">${g.direction===1?'↻':'↺'}</div>`;
+  $('pileCount').textContent=`Pile ${(g.pile||[]).length}`;
+  const top=(g.pile||[])[(g.pile||[]).length-1];$('topCard').innerHTML=top?cardHTML(top):'<div class="small">Empty</div>';
+  $('status').innerHTML=g.message+(room.phase==='play'&&g.current===meIndex?' Your turn.':'')+(walkthroughOn&&room.phase==='play'&&g.current===meIndex?'<div class="walkHintText">Green outline = playable now.</div>':'');
+  const zone=activeZone(p,g);
+  $('yourFace').innerHTML=sortCards(p.face||[]).map(c=>cardHTML(c,{selectable:zone==='face'&&g.current===meIndex,playableHint:zone==='face'&&isPlayableHintCard(c,p,g,zone)})).join('');
+  $('yourDown').innerHTML=(p.down||[]).map(c=>cardHTML(c,{back:true,selectable:zone==='down'&&g.current===meIndex})).join('');
+  $('yourHand').innerHTML=sortCards(p.hand||[]).map(c=>cardHTML(c,{selectable:zone==='hand'&&g.current===meIndex,playableHint:zone==='hand'&&isPlayableHintCard(c,p,g,zone)})).join('');
   document.querySelectorAll('#yourHand .card,#yourFace .card').forEach(el=>{el.onclick=()=>togglePlay(el.dataset.id);el.classList.toggle('selected',selectedPlay.includes(el.dataset.id))});
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>playDown(el.dataset.id));
-  $('playBtn').disabled=state.phase!=='play'||state.current!==meIndex||zone==='down'||!selectedPlay.length;
-  $('pickupBtn').disabled=state.phase!=='play'||state.current!==meIndex||!state.pile.length;
-  $('rematchPanel')?.classList.toggle('hidden',state.phase!=='done');
-  if($('rematchNote'))$('rematchNote').textContent=state.phase==='done'?(isHost?'Starts a fresh deal for everyone currently connected.':'The host will start a fresh deal for everyone currently connected.') : '';
+  $('playBtn').disabled=room.phase!=='play'||g.current!==meIndex||zone==='down'||!selectedPlay.length;
+  $('pickupBtn').disabled=room.phase!=='play'||g.current!==meIndex||!(g.pile||[]).length;
 }
 function togglePlay(id){
-  const arr=state.me.hand.some(c=>c.id===id)?state.me.hand:state.me.face,c=arr.find(x=>x.id===id);if(!c)return;
-  if(selectedPlay.length){const first=arr.find(x=>x.id===selectedPlay[0])||[...state.me.hand,...state.me.face].find(x=>x.id===selectedPlay[0]);if(first&&first.rank!==c.rank)selectedPlay=[]}
+  const p=me(),all=[...(p.hand||[]),...(p.face||[])],c=all.find(x=>x.id===id);if(!c)return;
+  if(selectedPlay.length){const f=all.find(x=>x.id===selectedPlay[0]);if(f&&f.rank!==c.rank)selectedPlay=[]}
   selectedPlay=selectedPlay.includes(id)?selectedPlay.filter(x=>x!==id):[...selectedPlay,id];renderGame();
 }
-function doPlay(){if(isHost)hostPlayRequest('p0',selectedPlay);else sendHost({type:'play',id:myId,cardIds:selectedPlay});selectedPlay=[]}
-function doPickup(){if(isHost)hostPickupRequest('p0');else sendHost({type:'pickup',id:myId})}
-function playDown(id){if(isHost)hostDownRequest('p0',id);else sendHost({type:'down',id:myId,cardId:id})}
 
-$('hostBtn').onclick=hostGame;$('joinBtn').onclick=joinGame;$('startBtn').onclick=startDeal;
-$('readyBtn').onclick=()=>{if(isHost)hostReady('p0');else sendHost({type:'ready',id:myId})};
-$('playBtn').onclick=doPlay;$('pickupBtn').onclick=doPickup;
-$('rematchBtn').onclick=()=>{selectedPlay=[];selectedSetup=null;if(isHost)hostRematch('p0');else{sendHost({type:'rematch',id:myId});if($('rematchNote'))$('rematchNote').textContent='Rematch requested…';}};
+async function playSelected(){
+  const ids=[...selectedPlay];selectedPlay=[];
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='play')return cur;
+    const players=normalizePlayers(cur.players),g=cur.game;
+    const i=players.findIndex(p=>p.id===myId);if(i!==g.current)return cur;
+    const p=players[i],z=activeZone(p,g);if(z==='down')return cur;
+    p[z]=p[z]||[];
+    const cards=ids.map(cid=>p[z].find(c=>c.id===cid)).filter(Boolean);
+    if(!cards.length||cards.some(c=>c.rank!==cards[0].rank)||!legal(cards[0],g))return cur;
+
+    g.pile=g.pile||[];
+    const rank=cards[0].rank;
+    cards.forEach(c=>{
+      p[z].splice(p[z].findIndex(x=>x.id===c.id),1);
+      g.pile.push(c);
+    });
+
+    // Four of ANY rank clears immediately and overrides the ordinary card effect.
+    if(consecutive(rank,g)>=4){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank} and made four in a row. Pile cleared.`,'clear');
+      drawUp(p,g);
+      p.hand=sortCards(p.hand||[]);
+      p.face=sortCards(p.face||[]);
+      finishCheck(cur,players,i);
+      keepOrAdvanceAfterFinish(cur,players,i);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    if(rank==='4'){
+      const target=replayTarget(g);
+      if(target){
+        // Each 4 repeats the effect once.
+        if(target.rank==='8'){
+          g.mustLow=false;
+          drawUp(p,g);
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8 and repeated the skip.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on an 8, repeating the skip ${cards.length} time${cards.length===1?'':'s'}.`,'skip');
+          finishCheck(cur,players,i);
+          if(cur.phase==='play')skipAdvance(g,players,cards.length);
+          cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+          return cur;
+        }
+        if(target.rank==='JOKER'){
+          for(let k=0;k<cards.length;k++)g.direction*=-1;
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a Joker and reversed direction again.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a Joker, repeating the reversal ${cards.length} time${cards.length===1?'':'s'}.`,'reverse');
+        } else if(target.rank==='7'){
+          g.mustLow=true;
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 7. The next player must play 7 or lower.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 7, repeating the 7-or-lower rule.`,'play');
+        } else if(target.rank==='2'){
+          g.mustLow=false;
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 2, repeating the reset.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on a 2, repeating the reset.`,'play');
+        } else {
+          // Ordinary cards have no extra action; 4 remains transparent to their rank.
+          g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on ${target.rank}.`;
+          addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}4 on ${target.rank}.`,'play');
+        }
+      }
+      drawUp(p,g);
+      p.hand=sortCards(p.hand||[]);
+      p.face=sortCards(p.face||[]);
+      finishCheck(cur,players,i);
+      if(cur.phase==='play'){
+        if(players[i].finished)advance(g,players,1);
+        else advance(g,players,1);
+      }
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    if(rank==='JOKER'){
+      for(let k=0;k<cards.length;k++)g.direction*=-1;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' Jokers':'a Joker'} and reversed direction${cards.length>1?' accordingly':''}.`,'reverse');
+    }
+
+    if(rank==='8'){
+      g.mustLow=false;
+      drawUp(p,g);
+      g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8.`;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`,'skip');
+      finishCheck(cur,players,i);
+      if(cur.phase==='play')skipAdvance(g,players,cards.length);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    let clear=rank==='10',same=rank==='10';
+
+    if(rank==='2')g.mustLow=false;
+    else if(rank==='7')g.mustLow=true;
+    else if(rank==='4'||rank==='JOKER'){}
+    else g.mustLow=false;
+
+    if(clear){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} cleared the pile and plays again.`;
+      addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}. Pile cleared.`,'clear');
+    } else {
+      g.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
+      if(rank!=='JOKER')addHistoryToRoom(cur,`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`,'play');
+    }
+
+    drawUp(p,g);
+    p.hand=sortCards(p.hand||[]);
+    p.face=sortCards(p.face||[]);
+    finishCheck(cur,players,i);
+    if(cur.phase==='play'&&!same)advance(g,players,1);
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+    return cur;
+  });
+}
+async function pickup(){
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='play')return cur;
+    const players=normalizePlayers(cur.players),g=cur.game;
+    const i=players.findIndex(p=>p.id===myId);if(i!==g.current||!(g.pile||[]).length)return cur;
+    const p=players[i];const picked=(g.pile||[]).length;p.hand=p.hand||[];p.hand.push(...g.pile);p.hand=sortCards(p.hand);g.pile=[];g.mustLow=false;g.message=`${p.name} picked up the pile.`;addHistoryToRoom(cur,`${p.name} picked up ${picked} card${picked===1?'':'s'}.`,'pickup');advance(g,players,1);
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
+  });
+}
+
+async function playDown(id){
+  await roomRef.transaction(cur=>{
+    if(!cur||cur.phase!=='play')return cur;
+    const players=normalizePlayers(cur.players),g=cur.game;
+    const i=players.findIndex(p=>p.id===myId);if(i!==g.current)return cur;
+    const p=players[i];if(activeZone(p,g)!=='down')return cur;
+    p.down=p.down||[];
+    const ix=p.down.findIndex(c=>c.id===id);if(ix<0)return cur;
+    const c=p.down.splice(ix,1)[0];
+    g.pile=g.pile||[];
+
+    if(!legal(c,g)){
+      g.pile.push(c);
+      p.hand=p.hand||[];
+      p.hand.push(...g.pile);
+      p.hand=sortCards(p.hand);
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} flipped ${c.rank} and picked up.`;
+      cur.lastBlindReveal={name:p.name,card:c,ts:Date.now()};
+      addHistoryToRoom(cur,`${p.name} blind flipped ${c.rank}${c.suit||''}, could not play it, and picked up the pile.`,'blind');
+      advance(g,players,1);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    g.pile.push(c);
+    cur.lastBlindReveal={name:p.name,card:c,ts:Date.now()};
+    const rank=c.rank;
+
+    // Four of ANY rank clears, including 4, 7, 8, Joker, etc.
+    if(consecutive(rank,g)>=4){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} made four ${rank}s, cleared the pile, and plays again.`;
+      addHistoryToRoom(cur,`${p.name} blindly flipped ${rank} and made four in a row. Pile cleared.`,'clear');
+      finishCheck(cur,players,i);
+      keepOrAdvanceAfterFinish(cur,players,i);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    if(rank==='4'){
+      const target=replayTarget(g);
+      if(target){
+        if(target.rank==='8'){
+          g.mustLow=false;
+          g.message=`${p.name} blindly flipped a 4 on an 8 and repeated the skip.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on an 8, repeating the skip.`,'skip');
+          finishCheck(cur,players,i);
+          if(cur.phase==='play')skipAdvance(g,players,1);
+          cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+          return cur;
+        }
+        if(target.rank==='JOKER'){
+          g.direction*=-1;
+          g.message=`${p.name} blindly flipped a 4 on a Joker and reversed direction again.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on a Joker, repeating the reversal.`,'reverse');
+        } else if(target.rank==='7'){
+          g.mustLow=true;
+          g.message=`${p.name} blindly flipped a 4 on a 7. The next player must play 7 or lower.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on a 7, repeating the 7-or-lower rule.`,'blind');
+        } else if(target.rank==='2'){
+          g.mustLow=false;
+          g.message=`${p.name} blindly flipped a 4 on a 2, repeating the reset.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on a 2, repeating the reset.`,'blind');
+        } else {
+          g.message=`${p.name} blindly flipped a 4 on ${target.rank}.`;
+          addHistoryToRoom(cur,`${p.name} blindly flipped a 4 on ${target.rank}.`,'blind');
+        }
+      }
+      finishCheck(cur,players,i);
+      if(cur.phase==='play'){
+        if(players[i].finished)advance(g,players,1);
+        else advance(g,players,1);
+      }
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    if(rank==='JOKER')g.direction*=-1;
+
+    if(rank==='8'){
+      g.mustLow=false;
+      g.message=`${p.name} flipped an 8.`;
+      addHistoryToRoom(cur,`${p.name} blindly flipped an 8 and skipped the next player.`,'skip');
+      finishCheck(cur,players,i);
+      if(cur.phase==='play')skipAdvance(g,players,1);
+      cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+      return cur;
+    }
+
+    let clear=rank==='10',same=rank==='10';
+    if(rank==='2')g.mustLow=false;
+    else if(rank==='7')g.mustLow=true;
+    else if(rank==='4'||rank==='JOKER'){}
+    else g.mustLow=false;
+
+    if(clear){
+      g.pile=[];
+      g.mustLow=false;
+      g.message=`${p.name} cleared the pile and plays again.`;
+    } else {
+      g.message=`${p.name} flipped ${rank}.`;
+    }
+
+    finishCheck(cur,players,i);
+    if(cur.phase==='play'&&!same)advance(g,players,1);
+    cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
+    return cur;
+  });
+}
+
+
+
+function gameIsFinished(){
+  const players=getPlayers();
+  const g=room?.game||{};
+  return room?.phase==='done' ||
+    !!g.shithead ||
+    !!g.gameOver ||
+    (players.length>1 && players.filter(p=>!p.finished).length<=1);
+}
+function renderReplay(){
+  const box=$('replayBox');
+  if(!box)return;
+  if(!gameIsFinished()){
+    box.classList.add('hidden');
+    return;
+  }
+  box.classList.remove('hidden');
+
+  const players=getPlayers();
+  const readyIds=room?.replayReady||{};
+  const count=players.filter(p=>readyIds[p.id]).length;
+  const mine=!!readyIds[myId];
+
+  $('replayBtn').disabled=mine;
+  $('replayBtn').textContent=mine?'Ready ✓':'Play Again';
+  $('replayStatus').textContent=`${count} of ${players.length} player${players.length===1?'':'s'} ready`;
+
+  // Host starts the rematch only when everyone in the current room opts in.
+  if(isHost && players.length>=2 && count===players.length){
+    startRematch().catch(e=>setMsg(e.message));
+  }
+}
+
+async function requestReplay(){
+  await ensureAuth();
+  if(!roomRef||!room||!gameIsFinished())return;
+  await roomRef.child('replayReady/'+myId).set(true);
+}
+
+async function startRematch(){
+  if(!isHost)return;
+  await roomRef.transaction(cur=>{
+    if(!cur)return cur;
+    const terminal = cur.phase==='done' || !!cur.game?.shithead || !!cur.game?.gameOver ||
+      (normalizePlayers(cur.players).length>1 && normalizePlayers(cur.players).filter(p=>!p.finished).length<=1);
+    if(!terminal)return cur;
+    const players=normalizePlayers(cur.players);
+    const ready=cur.replayReady||{};
+    if(players.length<2 || !players.every(p=>ready[p.id]))return cur;
+
+    const deck=makeDeck(players.length);
+    const ps=players.map(p=>({
+      id:p.id,
+      uid:p.uid||p.id,
+      name:p.name,
+      hand:[],
+      face:[],
+      down:[],
+      ready:false,
+      finished:false
+    }));
+
+    for(let r=0;r<3;r++)for(const p of ps)p.down.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.face.push(deck.pop());
+    for(let r=0;r<3;r++)for(const p of ps)p.hand.push(deck.pop());
+    ps.forEach(p=>{
+      p.hand=sortCards(p.hand);
+      p.face=sortCards(p.face);
+    });
+
+    cur.players=Object.fromEntries(ps.map(p=>[p.id,p]));
+    cur.game={
+      draw:deck,
+      pile:[],
+      current:null,
+      direction:1,
+      mustLow:false,
+      message:'Swap cards, then tap Ready.',
+      winnerOrder:[],
+      winnerRecorded:false
+    };
+    cur.phase='setup';
+    cur.replayReady=null;
+    cur.history=null;
+    addHistoryToRoom(cur,'Rematch started.','start');
+    return cur;
+  });
+}
+function addHistoryToRoom(cur,text,type='turn'){
+  cur.history=cur.history||{};
+  const key='h_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
+  cur.history[key]={
+    text,
+    type,
+    ts:firebase.database.ServerValue.TIMESTAMP
+  };
+}
+function renderHistory(){
+  const items=room?.history?Object.values(room.history):[];
+  items.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const recent=items.slice(-80);
+  const box=$('historyList');
+  if(!box)return;
+  box.innerHTML=recent.length
+    ? recent.map(h=>{
+        const d=h.ts?new Date(h.ts):null;
+        const tm=d?d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
+        return `<div class="historyItem">${tm?`<span class="time">${tm}</span>`:''}${escapeHtml(h.text||'')}</div>`;
+      }).join('')
+    : '<div class="small">No turns yet.</div>';
+  box.scrollTop=box.scrollHeight;
+}
+function renderChat(){
+  const entries=room?.chat?Object.entries(room.chat):[];
+  entries.sort((a,b)=>(a[1].ts||0)-(b[1].ts||0));
+  const recent=entries.slice(-50);
+  const box=$('chatMessages');
+  if(!box)return;
+
+  box.innerHTML=recent.length
+    ? recent.map(([key,m])=>`<div class="chatMessage"><strong>${escapeHtml(m.name||'Player')}:</strong>${escapeHtml(m.text||'')}</div>`).join('')
+    : '<div class="small">No messages yet.</div>';
+
+  const newest=entries.length?entries[entries.length-1]:null;
+  if(newest){
+    const [key,m]=newest;
+    const ts=m.ts||0;
+
+    // Only notify for a newly-arrived message from somebody else.
+    if(lastSeenChatTs && ts>lastSeenChatTs && m.uid!==authUser?.uid && key!==lastNotifiedChatKey){
+      unreadChat++;
+      lastNotifiedChatKey=key;
+      showChatNotification(m);
+    }
+    if(ts>lastSeenChatTs)lastSeenChatTs=ts;
+  }
+
+  updateChatBadge();
+  box.scrollTop=box.scrollHeight;
+}
+function updateChatBadge(){
+  const badge=$('chatBadge');
+  if(!badge)return;
+  if(unreadChat>0){
+    badge.textContent=unreadChat>9?'9+':String(unreadChat);
+    badge.classList.add('show');
+  }else{
+    badge.classList.remove('show');
+  }
+}
+function showChatNotification(m){
+  const toast=$('chatToast');
+  if(toast){
+    toast.textContent=`${m.name||'Player'}: ${m.text||''}`;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>toast.classList.remove('show'),3500);
+  }
+
+  // Give a small vibration on supported phones.
+  if(navigator.vibrate)navigator.vibrate(120);
+
+  // Update browser/app title while there is an unread message.
+  document.title='💬 New message · Shithead';
+}
+function clearChatNotifications(){
+  unreadChat=0;
+  updateChatBadge();
+  document.title='Shithead';
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+async function sendChat(){
+  await ensureAuth();
+  if(!roomRef||!room)return;
+  const input=$('chatInput');
+  const text=(input.value||'').trim().slice(0,180);
+  if(!text)return;
+  const p=me();if(!p)return;
+  const ref=roomRef.child('chat').push();
+  await ref.set({
+    uid:authUser.uid,
+    name:p.name,
+    text,
+    ts:firebase.database.ServerValue.TIMESTAMP
+  });
+  input.value='';
+}
+
+async function recordShitheadIfNeeded(){
+  if(!isHost || !room || room.phase!=='done')return;
+  const g=room.game||{};
+  if(g.shitheadSaved)return;
+
+  const players=getPlayers();
+  const remaining=players.filter(p=>!p.finished);
+  if(remaining.length!==1)return;
+
+  const loser=remaining[0];
+  const safe=loser.name.toLowerCase().replace(/[.#$/\[\]]/g,'_');
+  const ref=db.ref('leaderboard/'+safe);
+
+  await ref.transaction(cur=>({
+    name:loser.name,
+    wins:(cur?.wins||0),
+    shitheads:(cur?.shitheads||0)+1
+  }));
+
+  await roomRef.child('game/shitheadSaved').set(true);
+}
+async function showLeaderboard(){
+  await ensureAuth();
+  $('leaderWinsRows').innerHTML='<div class="small">Loading…</div>';
+  $('leaderShitheadRows').innerHTML='<div class="small">Loading…</div>';
+  $('leaderModal').classList.add('open');
+
+  const snap=await db.ref('leaderboard').once('value');
+  const data=snap.val()||{};
+  const rows=Object.values(data);
+
+  const wins=[...rows].sort((a,b)=>(b.wins||0)-(a.wins||0));
+  const shitheads=[...rows].sort((a,b)=>(b.shitheads||0)-(a.shitheads||0));
+
+  $('leaderWinsRows').innerHTML=wins.length
+    ? wins.map((r,i)=>`<div class="leaderRow"><span>${i+1}. ${r.name}</span><strong>${r.wins||0} win${(r.wins||0)===1?'':'s'} · ${r.shitheads||0} shithead${(r.shitheads||0)===1?'':'s'}</strong></div>`).join('')
+    : '<p>No multiplayer results yet.</p>';
+
+  $('leaderShitheadRows').innerHTML=shitheads.length
+    ? shitheads.map((r,i)=>`<div class="leaderRow"><span>${i+1}. ${r.name}</span><strong>${r.shitheads||0} shithead${(r.shitheads||0)===1?'':'s'} · ${r.wins||0} win${(r.wins||0)===1?'':'s'}</strong></div>`).join('')
+    : '<p>No completed multiplayer results yet.</p>';
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  setMsg('Signing in securely…');
+  initAnonymousAuth()
+    .then(()=>setMsg(''))
+    .catch(e=>{
+      setMsg(e.message);
+      $('hostBtn').disabled=true;
+      $('joinBtn').disabled=true;
+      $('leaderBtn').disabled=true;
+    });
+  $('hostBtn').onclick=()=>hostGame().catch(e=>setMsg(e.message));
+  $('joinBtn').onclick=()=>joinGame().catch(e=>setMsg(e.message));
+  $('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame().catch(err=>setMsg(err.message))});
+  $('dealBtn').onclick=()=>deal().catch(e=>setMsg(e.message));
+  $('readyBtn').onclick=()=>ready().catch(e=>setMsg(e.message));
+  $('playBtn').onclick=()=>playSelected().catch(e=>setMsg(e.message));
+  $('pickupBtn').onclick=()=>pickup().catch(e=>setMsg(e.message));
+  $('replayBtn').onclick=()=>requestReplay().catch(e=>setMsg(e.message));
+  $('chatSend').onclick=()=>{clearChatNotifications();sendChat().catch(e=>setMsg(e.message))};
+  $('chatInput').addEventListener('focus',clearChatNotifications);
+  $('chatMessages').addEventListener('click',clearChatNotifications);
+  $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){clearChatNotifications();sendChat().catch(err=>setMsg(err.message))}});
+  document.querySelector('.chatTitleRow')?.addEventListener('click',()=>{
+    document.querySelector('.chatBox')?.classList.toggle('open');
+    clearChatNotifications();
+  });
+  document.querySelector('.historyBox > .small:first-child')?.addEventListener('click',()=>{
+    document.querySelector('.historyBox')?.classList.toggle('open');
+  });
+
+  $('helpBtn').onclick=()=>$('helpModal').classList.add('open');
+  $('helpClose').onclick=()=>$('helpModal').classList.remove('open');
+  $('helpModal').onclick=e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('open')};
+  $('leaderBtn').onclick=()=>showLeaderboard().catch(e=>{$('leaderRows').textContent=e.message;$('leaderModal').classList.add('open')});
+  
+  $('leaderClose').onclick=()=>$('leaderModal').classList.remove('open');
+  $('leaderModal').onclick=e=>{if(e.target===$('leaderModal'))$('leaderModal').classList.remove('open')};
+});
+
+function toggleWalkthroughMulti(){
+  walkthroughOn=!walkthroughOn;
+  const b=document.getElementById('walkBtn');
+  if(b){
+    b.textContent='Walkthrough: '+(walkthroughOn?'On':'Off');
+    b.setAttribute('aria-pressed',walkthroughOn?'true':'false');
+  }
+  if(room?.phase==='play')renderGame();
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  const b=document.getElementById('walkBtn');
+  if(b){
+    b.textContent='Walkthrough: Off';
+    b.setAttribute('aria-pressed','false');
+    b.onclick=toggleWalkthroughMulti;
+  }
+});
+
 </script>
-
 </body>
 </html>

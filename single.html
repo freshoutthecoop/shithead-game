@@ -546,6 +546,10 @@ body{
   padding-bottom:max(22px, calc(env(safe-area-inset-bottom, 0px) + 12px)) !important;
 }
 
+
+.homeTitle{color:inherit;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.homeTitle:visited{color:inherit}
+.homeTitle:active{opacity:.75}
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -562,7 +566,7 @@ body{
   </div>
 </div>
 <div class="wrap">
-<h1>Shithead</h1>
+<h1><a href="./index.html" class="homeTitle" aria-label="Back to home">Shithead</a></h1>
 <div id="start" class="panel">
   <div class="row between">
     <div><div style="font-weight:800">Single player</div><div class="small">You vs computer players</div></div>
@@ -598,7 +602,8 @@ body{
     <div class="label">YOUR FACE-DOWN CARDS</div><div id="yourDown" class="cards" style="margin:6px 0 12px"></div>
     <div class="label">YOUR HAND</div><div id="yourHand" class="cards" style="margin:6px 0 12px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up Pile</button></div>
-<div class="historyBox">
+<div id="singleReplayWrap" class="hidden" style="margin-top:8px"><button id="singleReplayBtn" class="btn primary" type="button">Play Again</button><div class="small" style="margin-top:5px">Change the number of computers or difficulty before starting the next game.</div></div>
+<div class="historyBox open">
   <div id="singleHistoryToggle" class="small" style="font-weight:800;cursor:pointer">TURN HISTORY</div>
   <div id="singleHistoryList" class="historyList"></div>
 </div>
@@ -957,9 +962,22 @@ function render(){
   $('pickupBtn').disabled=G.current!==0||G.phase!=='play'||G.pile.length===0;
 
   renderSingleHistory();
+  const replayWrap=document.getElementById('singleReplayWrap');
+  if(replayWrap)replayWrap.classList.toggle('hidden',G.phase!=='done');
 }
 $('newGame').onclick=()=>deal(parseInt($('playerCount').value));
 $('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);
+const singleReplayBtn=document.getElementById('singleReplayBtn');
+if(singleReplayBtn)singleReplayBtn.onclick=()=>{
+  G=null;
+  selectedSetup=null;
+  selectedPlay=[];
+  singleHistory=[];
+  $('game').classList.add('hidden');
+  $('setup').classList.add('hidden');
+  $('start').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+};
 
 function setDifficulty(d){
   if(!['easy','medium','hard'].includes(d))return;
