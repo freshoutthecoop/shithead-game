@@ -1,4 +1,4 @@
-const CACHE_NAME='shithead-v57';
+const CACHE_NAME='shithead-v58';
 const CORE=['./','./index.html','./single.html','./multiplayer.html','./manifest.webmanifest'];
 
 self.addEventListener('install',event=>{

@@ -88,6 +88,23 @@ body{
   font-weight:900;
   cursor:pointer;
 }
+
+/* v58 home polish */
+@media(max-width:650px){
+  body{background:linear-gradient(180deg,#07512f,#043d25)}
+  .shell{
+    padding-top:calc(env(safe-area-inset-top,0px) + 16px);
+    padding-left:14px;
+    padding-right:14px;
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);
+  }
+  .brand{font-size:42px;letter-spacing:-1.6px;margin-top:8px}
+  .subtitle{max-width:310px;line-height:1.35}
+  .modeGrid{gap:10px}
+  .modeCard{border-radius:18px;padding:17px 16px}
+  .howCard{border-radius:18px}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest?v=29">
 <link rel="icon" type="image/png" href="favicon.png?v=29">
@@ -96,9 +113,9 @@ body{
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Shithead">
 </head>
-<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v57</div>
-<a class="single" href="single.html?v=57">Single Player<p>Working baseline, unchanged.</p></a>
-<a class="multi" href="multiplayer.html?v=57">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
+<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v58</div>
+<a class="single" href="single.html?v=58">Single Player<p>Working baseline, unchanged.</p></a>
+<a class="multi" href="multiplayer.html?v=58">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
 <button id="mainHelpBtn" class="helpBtn" type="button">How to Play</button>
 </div>
 <div id="mainHelpModal" class="modalBack">
@@ -151,7 +168,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=57');
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=58');
       reg.update();
     } catch (e) {
       console.warn('Service worker update failed', e);

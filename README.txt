@@ -11,3 +11,6 @@ All v52 gameplay/features remain unchanged.
 
 
 v54: Restores the full Firebase multiplayer architecture, adds network-first cache updates, and keeps the latest single-player controls.
+
+
+v58: iPhone-first UI refresh with compact opponent rail, larger opponent cards, overlapping player hand, and black-and-white reverse-arrow Joker.

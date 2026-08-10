@@ -550,6 +550,313 @@ body{
 .homeTitle{color:inherit;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .homeTitle:visited{color:inherit}
 .homeTitle:active{opacity:.75}
+
+/* v58 iPhone-first table UI */
+:root{
+  --table:#07512f;
+  --table-deep:#043d25;
+  --glass:rgba(2,34,21,.52);
+  --glass-strong:rgba(2,28,17,.72);
+  --line:rgba(255,255,255,.14);
+}
+html{background:var(--table-deep)}
+body{
+  background:
+    radial-gradient(circle at 50% 10%,rgba(28,129,79,.24),transparent 42%),
+    linear-gradient(180deg,var(--table),var(--table-deep));
+  min-height:100dvh;
+}
+.wrap{
+  width:100%;
+  max-width:760px;
+  padding:
+    calc(env(safe-area-inset-top,0px) + 10px)
+    10px
+    calc(env(safe-area-inset-bottom,0px) + 18px);
+}
+h1{
+  margin:0 0 10px;
+  font-size:29px;
+  line-height:1.05;
+  letter-spacing:-.8px;
+}
+.homeTitle{display:inline-block;padding:3px 1px}
+.panel{
+  background:var(--glass);
+  border:1px solid var(--line);
+  box-shadow:0 8px 24px rgba(0,0,0,.08);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+.btn{
+  min-height:44px;
+  border-radius:13px;
+  padding:11px 15px;
+}
+.btn.primary{box-shadow:0 5px 14px rgba(0,0,0,.14)}
+.card{
+  border:1.5px solid #d8d8d8;
+  border-radius:10px;
+  box-shadow:0 3px 8px rgba(0,0,0,.28);
+}
+.card.selected{
+  transform:translateY(-8px);
+  outline:3px solid var(--accent);
+  outline-offset:1px;
+}
+.card.joker{
+  background:#fff !important;
+  color:#111 !important;
+  border:2px solid #111 !important;
+  box-shadow:0 3px 8px rgba(0,0,0,.28) !important;
+  padding:5px !important;
+}
+.card.joker .rank{
+  width:100%;
+  color:#111 !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.3px !important;
+  text-align:left;
+}
+.card.joker .suit{display:none !important}
+.card.joker .reverseMark{
+  display:flex;
+  flex:1;
+  width:100%;
+  align-items:center;
+  justify-content:center;
+  color:#111;
+  font-size:31px;
+  line-height:1;
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:900;
+}
+
+/* Mobile game table */
+@media(max-width:650px){
+  body{overflow-x:hidden}
+  .wrap{padding-left:9px;padding-right:9px}
+  h1{font-size:28px;margin-bottom:8px}
+
+  #game{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  /* Opponents become one compact rail instead of stacked full-width boxes. */
+  #opponents.players{
+    display:flex !important;
+    flex-direction:row !important;
+    gap:6px !important;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    scroll-snap-type:x proximity;
+    padding:1px 1px 4px;
+    margin:0;
+    scrollbar-width:none;
+  }
+  #opponents.players::-webkit-scrollbar{display:none}
+  #opponents .player{
+    display:block !important;
+    flex:0 0 118px;
+    min-width:118px;
+    min-height:82px !important;
+    padding:7px 7px 6px !important;
+    border-radius:13px !important;
+    background:rgba(255,255,255,.085);
+    scroll-snap-align:start;
+    overflow:hidden;
+  }
+  #opponents .player.active{
+    outline:2px solid var(--accent);
+    outline-offset:-1px;
+    background:rgba(255,209,102,.09);
+  }
+  #opponents .player.finished{opacity:.52}
+  #opponents .name,
+  #opponents .player > div:first-child{
+    font-size:12px !important;
+    line-height:1.1;
+    font-weight:900 !important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    margin-bottom:3px;
+  }
+  #opponents .small{
+    font-size:9.5px !important;
+    line-height:1.15;
+    white-space:nowrap;
+  }
+  #opponents .cards{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:0 !important;
+    justify-content:flex-start !important;
+    margin-top:5px !important;
+    min-height:43px;
+    overflow:visible;
+    padding-left:1px;
+  }
+  #opponents .card{
+    width:31px !important;
+    height:43px !important;
+    min-width:31px;
+    padding:2px !important;
+    border-width:1px !important;
+    border-radius:6px !important;
+    margin-right:-9px;
+    box-shadow:0 2px 4px rgba(0,0,0,.22);
+  }
+  #opponents .card:last-child{margin-right:0}
+  #opponents .rank{
+    font-size:10px !important;
+    line-height:1 !important;
+  }
+  #opponents .suit{
+    font-size:12px !important;
+    line-height:1 !important;
+  }
+  #opponents .card.joker .rank{font-size:6.5px !important}
+  #opponents .card.joker .reverseMark{font-size:16px !important}
+
+  /* Central table */
+  .pileArea,.pile{
+    order:2;
+    min-height:142px;
+    display:grid !important;
+    grid-template-columns:72px 1fr 72px !important;
+    align-items:center;
+    gap:6px !important;
+    padding:10px 8px !important;
+    margin:0 !important;
+    border-radius:19px !important;
+    background:rgba(0,0,0,.20);
+  }
+  .pileArea .center,.pile .center{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    min-width:0;
+  }
+  #topCard .card,
+  #topCard .pileCard{
+    width:72px !important;
+    height:101px !important;
+    border-radius:11px !important;
+    padding:6px !important;
+  }
+  #topCard .rank{font-size:23px !important}
+  #topCard .suit{font-size:28px !important}
+  #topCard .card.joker .rank{font-size:12px !important}
+  #topCard .card.joker .reverseMark{font-size:34px !important}
+  #pileCount{margin-top:5px;font-size:11px !important}
+  #drawCount{font-size:28px !important;line-height:1}
+  #direction{font-size:22px !important}
+
+  /* Player area feels like cards on the table, not a giant form. */
+  #game > .panel:not(.pile):not(.pileArea){
+    order:3;
+    margin:0 !important;
+    padding:10px !important;
+    border-radius:18px !important;
+  }
+  #status{
+    min-height:38px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    margin:-1px 0 8px;
+    padding:7px 9px;
+    border-radius:11px;
+    background:rgba(0,0,0,.18);
+    font-size:13px;
+    line-height:1.25;
+  }
+
+  #yourFace,#yourDown{
+    flex-wrap:nowrap !important;
+    min-height:54px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  #yourFace::-webkit-scrollbar,#yourDown::-webkit-scrollbar{display:none}
+
+  #yourFace .card,#yourDown .card{
+    width:39px !important;
+    height:55px !important;
+    min-width:39px;
+    padding:3px !important;
+    border-radius:7px !important;
+  }
+  #yourFace .rank,#yourDown .rank{font-size:13px !important}
+  #yourFace .suit,#yourDown .suit{font-size:15px !important}
+  #yourFace .card.joker .rank{font-size:7px !important}
+  #yourFace .card.joker .reverseMark{font-size:18px !important}
+
+  /* Main hand overlaps like a real hand of cards and can scroll horizontally. */
+  #yourHand{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    overflow-y:visible !important;
+    scrollbar-width:none;
+    padding:9px 5px 7px 2px;
+    margin:1px 0 7px !important;
+    min-height:94px;
+    align-items:flex-end;
+  }
+  #yourHand::-webkit-scrollbar{display:none}
+  #yourHand .card{
+    width:60px !important;
+    height:86px !important;
+    min-width:60px;
+    padding:5px !important;
+    margin-right:-16px;
+    flex:0 0 auto;
+  }
+  #yourHand .card:last-child{margin-right:0}
+  #yourHand .rank{font-size:20px !important}
+  #yourHand .suit{font-size:23px !important}
+  #yourHand .card.joker .rank{font-size:10px !important}
+  #yourHand .card.joker .reverseMark{font-size:28px !important}
+
+  /* Action row */
+  #playBtn,#pickupBtn{
+    min-height:46px;
+    padding:11px 14px;
+    font-size:14px;
+  }
+  #playBtn{min-width:88px}
+  #pickupBtn{min-width:116px}
+
+  .label,
+  #game .small{
+    letter-spacing:.15px;
+  }
+
+  /* History/chat become compact drawers instead of dominating the table. */
+  .historyBox,.chatBox{
+    border-radius:13px !important;
+    background:rgba(0,0,0,.16) !important;
+    padding:9px !important;
+    margin-top:7px !important;
+  }
+  .historyList{max-height:120px !important}
+  .chatMessages{max-height:105px !important}
+  .historyItem,.chatMessage{font-size:11px !important}
+
+  #replayBox{
+    border:1px solid rgba(255,209,102,.26) !important;
+    background:rgba(255,209,102,.08) !important;
+  }
+}
+
 </style>
 <link rel="icon" type="image/png" href="favicon.png?v=29">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=29">
@@ -661,7 +968,7 @@ function makeDeck(nPlayers){
 }
 function cardHTML(c,opts={}){
   const red=c.suit==='♥'||c.suit==='♦', txt=c.rank==='JOKER'?'🃏':c.rank;
-  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!opts.back?'joker':''} ${opts.back?'back':''} ${opts.cls||''} ${opts.playableHint?'playableHint':''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':(c.rank==='JOKER'?'JOKER':txt)}</span><span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
+  return `<div class="card ${red?'red':''} ${c.rank==='JOKER'&&!opts.back?'joker':''} ${opts.back?'back':''} ${opts.cls||''} ${opts.playableHint?'playableHint':''}" data-id="${c.id||''}"><span class="rank">${opts.back?'':(c.rank==='JOKER'?'JOKER':txt)}</span>${(!opts.back&&c.rank==='JOKER')?'<span class="reverseMark" aria-hidden="true">⇄</span>':''}<span class="suit">${opts.back?'':(c.rank==='JOKER'?'':c.suit)}</span></div>`;
 }
 function sortCards(cards){
   const suitOrder={'♥':0,'♦':1,'♣':2,'♠':3,'':4};
