@@ -21,11 +21,31 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}.historyToggle{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:10px}.historyDrawer{display:none;margin-top:8px;max-height:180px;overflow:auto;background:rgba(0,0,0,.14);border-radius:10px;padding:8px}.historyDrawer.open{display:block}.historyItem{font-size:13px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.08)}.historyItem:last-child{border-bottom:0}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
 .homeTitle{color:inherit;text-decoration:none;cursor:pointer}.homeTitle:visited{color:inherit}
+
+.homeNavBtn{
+  position:fixed;
+  top:calc(env(safe-area-inset-top, 0px) + 10px);
+  right:12px;
+  z-index:99999;
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:999px;
+  padding:8px 12px;
+  background:rgba(11,61,40,.96);
+  color:#fff;
+  font:inherit;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.homeNavBtn:active{transform:scale(.97)}
 </style>
 </head>
 <body>
+<button id="homeNavBtn" class="homeNavBtn" type="button" aria-label="Go to home screen">Shithead</button>
 <div class="wrap">
-<h1><a href="index.html" class="homeTitle" aria-label="Go to home screen">Shithead</a></h1>
+<h1>Shithead</h1>
 <div id="start" class="panel">
   <div class="row between">
     <div><div style="font-weight:800">Single player</div><div class="small">You vs computer players</div></div>
@@ -266,6 +286,19 @@ function render(){
 $('newGame').onclick=()=>deal(parseInt($('playerCount').value));
 $('playAgainBtn').onclick=()=>{selectedPlay=[];selectedSetup=null;$('game').classList.add('hidden');$('setup').classList.add('hidden');$('start').classList.remove('hidden');$('historyDrawer').classList.remove('open');$('historyArrow').textContent='▾';};
 $('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);$('historyToggle').onclick=()=>{const d=$('historyDrawer');d.classList.toggle('open');$('historyArrow').textContent=d.classList.contains('open')?'▴':'▾';if(d.classList.contains('open'))d.scrollTop=d.scrollHeight};
+</script>
+
+<script>
+(function(){
+  const homeBtn=document.getElementById('homeNavBtn');
+  if(homeBtn){
+    homeBtn.addEventListener('click', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      window.location.assign('./index.html');
+    });
+  }
+})();
 </script>
 </body>
 </html>
