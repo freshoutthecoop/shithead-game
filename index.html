@@ -96,9 +96,9 @@ body{
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Shithead">
 </head>
-<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v56</div>
-<a class="single" href="single.html?v=56">Single Player<p>Working baseline, unchanged.</p></a>
-<a class="multi" href="multiplayer.html?v=56">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
+<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v57</div>
+<a class="single" href="single.html?v=57">Single Player<p>Working baseline, unchanged.</p></a>
+<a class="multi" href="multiplayer.html?v=57">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
 <button id="mainHelpBtn" class="helpBtn" type="button">How to Play</button>
 </div>
 <div id="mainHelpModal" class="modalBack">
@@ -151,7 +151,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=56');
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=57');
       reg.update();
     } catch (e) {
       console.warn('Service worker update failed', e);

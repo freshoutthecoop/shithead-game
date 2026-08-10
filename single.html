@@ -760,14 +760,19 @@ function skipAdvance(skipCount){
   const active=G.players.filter(p=>!p.finished);
   if(active.length<=1)return;
 
-  // House rule: with exactly 2 active players, any 8 skips the sole opponent,
-  // so the current player keeps the turn.
-  if(active.length===2){
+  const currentPlayer=G.players[G.current];
+
+  // With exactly 2 ACTIVE players, an 8 normally skips the sole opponent,
+  // so the player who played it keeps the turn.
+  // But if that player just went out on the 8, they cannot keep the turn.
+  // In that case, apply the skips across the remaining active players and
+  // land on the next active player.
+  if(active.length===2 && currentPlayer && !currentPlayer.finished){
     return;
   }
 
-  // With 3+ active players, skip skipCount successive opponents,
-  // then move to the next active player.
+  // Skip the requested number of active players, then land on the next
+  // active player. advance() automatically ignores anyone already out.
   for(let k=0;k<skipCount;k++)advance(1);
   advance(1);
 }
@@ -793,6 +798,7 @@ function playCards(i,cards){
     addSingleHistory(`${p.name} made four ${rank}s. Pile cleared.`,'clear');
     drawUp(p);
     checkFinish(i);
+    if(p.finished)advance(1);
     render();
     maybeAITurn();
     return true;
@@ -868,7 +874,7 @@ function playCards(i,cards){
 
   drawUp(p);
   checkFinish(i);
-  if(!sameTurn)advance(1);
+  if(!sameTurn || p.finished)advance(1);
   render();
   maybeAITurn();
   return true;
@@ -892,7 +898,11 @@ function aiTurn(){
   for(const cand of groups)if(cand[0].rank!=='4'&&consecutiveCount(cand[0].rank)+cand.length>=4){g=cand;break}
   playCards(i,g);
 }
-function maybeAITurn(){if(activeCount()<=1){endGame();return}if(G.current!==0)setTimeout(aiTurn,550)}
+function maybeAITurn(){
+  if(activeCount()<=1){endGame();return}
+  if(G.players[G.current]?.finished)advance(1);
+  if(G.current!==0)setTimeout(aiTurn,550);
+}
 function endGame(){G.phase='done';const loser=G.players.find(p=>!p.finished);G.message=`${loser?.name||'Nobody'} is the SHITHEAD.`;render()}
 function humanPlay(){
   if(G.current!==0||G.phase!=='play')return;const p=G.players[0],z=availableZone(p);if(z==='down')return;

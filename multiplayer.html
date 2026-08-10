@@ -1013,6 +1013,10 @@ function advance(g,players,n){
     }while(players[g.current]?.finished&&guard<=players.length);
   }
 }
+function ensureActiveCurrent(g,players){
+  if(players.length<=1)return;
+  if(players[g.current]?.finished)advance(g,players,1);
+}
 function keepOrAdvanceAfterFinish(cur,players,i){
   if(cur.phase!=='play')return;
   if(players[i]?.finished){
