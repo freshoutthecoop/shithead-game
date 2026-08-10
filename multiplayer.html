@@ -21,11 +21,12 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
 input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:none!important}.code{font-size:28px;font-weight:900;letter-spacing:3px}.notice{padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.08)}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
+.homeTitle{color:inherit;text-decoration:none;cursor:pointer}.homeTitle:visited{color:inherit}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Shithead</h1>
+<h1><a href="index.html" class="homeTitle" aria-label="Go to home screen">Shithead</a></h1>
 
 <div id="home" class="panel">
   <div class="row">
@@ -73,6 +74,7 @@ input{border-radius:10px;border:0;padding:11px 12px;min-width:0}.hidden{display:
     <div class="small">YOUR FACE-DOWN CARDS</div><div id="yourDown" class="cards" style="margin:6px 0 12px"></div>
     <div class="small">YOUR HAND</div><div id="yourHand" class="cards" style="margin:6px 0 12px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up Pile</button></div>
+    <div id="rematchPanel" class="notice hidden" style="margin-top:12px"><div style="font-weight:800;margin-bottom:8px">Game over</div><div class="small" style="margin-bottom:10px">Play again with the same people?</div><button id="rematchBtn" class="btn primary" type="button">Play Again</button><div id="rematchNote" class="small" style="margin-top:8px"></div></div>
   </div>
 </div>
 </div>
@@ -147,6 +149,7 @@ function handleHostMessage(conn,m){
   else if(m.type==='play') hostPlayRequest(m.id,m.cardIds);
   else if(m.type==='pickup') hostPickupRequest(m.id);
   else if(m.type==='down') hostDownRequest(m.id,m.cardId);
+  else if(m.type==='rematch') hostRematch(m.id);
 }
 function handleClientMessage(m){
   if(m.type==='joined'){myId=m.id;lobby=m.lobby;openLobby()}
@@ -175,6 +178,12 @@ function startDeal(){
   state={players,draw:deck,pile:[],current:null,direction:1,phase:'setup',mustLow:false,message:'Swap cards, then tap Ready.',winnerOrder:[]};
   pushViews();
 }
+
+function hostRematch(requesterId){
+  if(!isHost||state?.phase!=='done'||lobby.length<2)return;
+  startDeal();
+}
+
 function hostSwap(id,aId,bId){
   if(state?.phase!=='setup')return;const p=state.players.find(x=>x.id===id);if(!p||p.ready)return;
   const ah=p.hand.findIndex(c=>c.id===aId), af=p.face.findIndex(c=>c.id===aId), bh=p.hand.findIndex(c=>c.id===bId), bf=p.face.findIndex(c=>c.id===bId);
@@ -338,6 +347,8 @@ function renderGame(){
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>playDown(el.dataset.id));
   $('playBtn').disabled=state.phase!=='play'||state.current!==meIndex||zone==='down'||!selectedPlay.length;
   $('pickupBtn').disabled=state.phase!=='play'||state.current!==meIndex||!state.pile.length;
+  $('rematchPanel')?.classList.toggle('hidden',state.phase!=='done');
+  if($('rematchNote'))$('rematchNote').textContent=state.phase==='done'?(isHost?'Starts a fresh deal for everyone currently connected.':'The host will start a fresh deal for everyone currently connected.') : '';
 }
 function togglePlay(id){
   const arr=state.me.hand.some(c=>c.id===id)?state.me.hand:state.me.face,c=arr.find(x=>x.id===id);if(!c)return;
@@ -351,6 +362,7 @@ function playDown(id){if(isHost)hostDownRequest('p0',id);else sendHost({type:'do
 $('hostBtn').onclick=hostGame;$('joinBtn').onclick=joinGame;$('startBtn').onclick=startDeal;
 $('readyBtn').onclick=()=>{if(isHost)hostReady('p0');else sendHost({type:'ready',id:myId})};
 $('playBtn').onclick=doPlay;$('pickupBtn').onclick=doPickup;
+$('rematchBtn').onclick=()=>{selectedPlay=[];selectedSetup=null;if(isHost)hostRematch('p0');else{sendHost({type:'rematch',id:myId});if($('rematchNote'))$('rematchNote').textContent='Rematch requested…';}};
 </script>
 </body>
 </html>

@@ -20,11 +20,12 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
 .setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}.historyToggle{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:10px}.historyDrawer{display:none;margin-top:8px;max-height:180px;overflow:auto;background:rgba(0,0,0,.14);border-radius:10px;padding:8px}.historyDrawer.open{display:block}.historyItem{font-size:13px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.08)}.historyItem:last-child{border-bottom:0}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
+.homeTitle{color:inherit;text-decoration:none;cursor:pointer}.homeTitle:visited{color:inherit}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Shithead</h1>
+<h1><a href="index.html" class="homeTitle" aria-label="Go to home screen">Shithead</a></h1>
 <div id="start" class="panel">
   <div class="row between">
     <div><div style="font-weight:800">Single player</div><div class="small">You vs computer players</div></div>
@@ -61,6 +62,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
     <div class="label">YOUR FACE-DOWN CARDS</div><div id="yourDown" class="cards" style="margin:6px 0 12px"></div>
     <div class="label">YOUR HAND</div><div id="yourHand" class="cards" style="margin:6px 0 12px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up Pile</button></div>
+    <div id="replayPanel" class="notice hidden" style="margin-top:12px"><div style="font-weight:800;margin-bottom:8px">Game over</div><div class="small" style="margin-bottom:10px">Play again? You can change the number of computers and difficulty first.</div><button id="playAgainBtn" class="btn primary" type="button">Play Again</button></div>
     <button id="historyToggle" class="btn historyToggle" type="button"><span>Turn History</span><span id="historyArrow">▾</span></button>
     <div id="historyDrawer" class="historyDrawer"><div id="turnHistory"></div></div>
   </div>
@@ -258,9 +260,11 @@ function render(){
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>humanDown(el.dataset.id));
   const z=availableZone(p);$('playBtn').disabled=G.current!==0||G.phase!=='play'||z==='down'||selectedPlay.length===0;
   $('pickupBtn').disabled=G.current!==0||G.phase!=='play'||G.pile.length===0;
+  $('replayPanel')?.classList.toggle('hidden',G.phase!=='done');
   const hist=$('turnHistory');if(hist){hist.innerHTML=(G.history||[]).map(x=>`<div class="historyItem">${x}</div>`).join('');const drawer=$('historyDrawer');if(drawer?.classList.contains('open'))drawer.scrollTop=drawer.scrollHeight}
 }
 $('newGame').onclick=()=>deal(parseInt($('playerCount').value));
+$('playAgainBtn').onclick=()=>{selectedPlay=[];selectedSetup=null;$('game').classList.add('hidden');$('setup').classList.add('hidden');$('start').classList.remove('hidden');$('historyDrawer').classList.remove('open');$('historyArrow').textContent='▾';};
 $('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);$('historyToggle').onclick=()=>{const d=$('historyDrawer');d.classList.toggle('open');$('historyArrow').textContent=d.classList.contains('open')?'▴':'▾';if(d.classList.contains('open'))d.scrollTop=d.scrollHeight};
 </script>
 </body>
