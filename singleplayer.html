@@ -18,7 +18,7 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
 .card.selectable{cursor:pointer}.card.selected{transform:translateY(-9px);outline:3px solid var(--accent)}.rank{font-size:20px;line-height:1}.suit{font-size:22px;align-self:flex-end}
 .pileCard{width:72px;height:100px}.center{display:flex;justify-content:center;align-items:center;text-align:center}.pileArea{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
 .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;background:white;color:#173b2a;cursor:pointer}.btn.primary{background:var(--accent);color:#29220d}.btn.danger{background:var(--danger);color:#2e1111}.btn:disabled{opacity:.4;cursor:not-allowed}
-.setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}
+.setupGrid{display:grid;grid-template-columns:1fr;gap:10px}.faceSection{display:grid;grid-template-columns:1fr;gap:6px}.label{font-size:13px;font-weight:700;color:var(--muted)}.hidden{display:none!important}.toast{font-size:14px;color:#fff2c2}.historyToggle{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:10px}.historyDrawer{display:none;margin-top:8px;max-height:180px;overflow:auto;background:rgba(0,0,0,.14);border-radius:10px;padding:8px}.historyDrawer.open{display:block}.historyItem{font-size:13px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.08)}.historyItem:last-child{border-bottom:0}
 @media(min-width:520px){.players{grid-template-columns:repeat(3,1fr)}.card{width:62px;height:86px}}
 </style>
 </head>
@@ -61,6 +61,8 @@ h1{margin:2px 0 8px;font-size:28px}.panel{background:rgba(0,0,0,.18);border:1px 
     <div class="label">YOUR FACE-DOWN CARDS</div><div id="yourDown" class="cards" style="margin:6px 0 12px"></div>
     <div class="label">YOUR HAND</div><div id="yourHand" class="cards" style="margin:6px 0 12px"></div>
     <div class="row"><button id="playBtn" class="btn primary">Play</button><button id="pickupBtn" class="btn danger">Pick Up Pile</button></div>
+    <button id="historyToggle" class="btn historyToggle" type="button"><span>Turn History</span><span id="historyArrow">▾</span></button>
+    <div id="historyDrawer" class="historyDrawer"><div id="turnHistory"></div></div>
   </div>
 </div>
 </div>
@@ -101,7 +103,7 @@ function deal(n){
   for(let r=0;r<3;r++) for(const p of players) p.face.push(deck.pop());
   for(let r=0;r<3;r++) for(const p of players) p.hand.push(deck.pop());
   players.forEach(sortPlayerCards);
-  G={players,draw:deck,pile:[],current:0,direction:1,phase:'setup',winnerOrder:[],message:'',mustLow:false,difficulty:$('difficulty')?.value||'medium'};
+  G={players,draw:deck,pile:[],current:0,direction:1,phase:'setup',winnerOrder:[],message:'',mustLow:false,difficulty:$('difficulty')?.value||'medium',history:[]};
   aiSetup(); renderSetup();
 }
 function scoreCard(c){
@@ -131,7 +133,7 @@ function startGame(){
   let red=[];G.players.forEach((p,i)=>p.hand.forEach(c=>{if(c.rank==='3'&&(c.suit==='♥'||c.suit==='♦'))red.push(i)}));
   if(red.length)G.current=red[Math.floor(Math.random()*red.length)];
   else{let best={v:99,i:0};G.players.forEach((p,i)=>p.hand.forEach(c=>{let v=value[c.rank]??15;if(v<best.v)best={v,i}}));G.current=best.i}
-  G.message=`${G.players[G.current].name} goes first. Computer difficulty: ${(G.difficulty||'medium')[0].toUpperCase()+(G.difficulty||'medium').slice(1)}.`;render();maybeAITurn();
+  G.message=`${G.players[G.current].name} goes first. Computer difficulty: ${(G.difficulty||'medium')[0].toUpperCase()+(G.difficulty||'medium').slice(1)}.`;addHistory(G.message);render();maybeAITurn();
 }
 function meaningfulTop(){for(let i=G.pile.length-1;i>=0;i--)if(G.pile[i].rank!=='4')return G.pile[i];return null}
 function consecutiveCount(rank){let n=0;for(let i=G.pile.length-1;i>=0;i--){const c=G.pile[i];if(c.rank==='4')continue;if(c.rank===rank)n++;else break}return n}
@@ -144,7 +146,8 @@ function legal(c){
   return value[c.rank]>=value[top.rank];
 }
 function drawUp(p){while(G.draw.length&&p.hand.length<3)p.hand.push(G.draw.pop());p.hand=sortCards(p.hand)}
-function checkFinish(i){const p=G.players[i];if(!G.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;G.winnerOrder.push(i);G.message+=` ${p.name} is out!`}}
+function addHistory(text){if(!G)return;G.history??=[];G.history.push(text)}
+function checkFinish(i){const p=G.players[i];if(!G.draw.length&&!p.hand.length&&!p.face.length&&!p.down.length&&!p.finished){p.finished=true;G.winnerOrder.push(i);addHistory(`${p.name} is out in place ${G.winnerOrder.length}.`);return true}return false}
 function activeCount(){return G.players.filter(p=>!p.finished).length}
 function advance(steps){
   if(activeCount()<=1)return;
@@ -166,7 +169,7 @@ function playCards(i,cards){
   const rank=cards[0].rank;let clear=false,sameTurn=false;
   if(rank==='JOKER')for(let k=0;k<cards.length;k++)G.direction*=-1;
   if(rank==='8'){
-    G.mustLow=false;drawUp(p);checkFinish(i);G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`;
+    G.mustLow=false;drawUp(p);const finishedNow=checkFinish(i);G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}8 and skipped ${cards.length} player${cards.length>1?'s':''}.`;addHistory(G.message);if(finishedNow)G.message+=` ${p.name} is out!`; 
     if(activeCount()<=1){endGame();return true}
     advance(cards.length+1);normalizeCurrent();render();maybeAITurn();return true;
   }
@@ -175,14 +178,15 @@ function playCards(i,cards){
   if(rank!=='4'&&consecutiveCount(rank)>=4){clear=true;sameTurn=true}
   if(clear){G.pile=[];G.mustLow=false;G.message=`${p.name} cleared the pile and plays again.`}
   else G.message=`${p.name} played ${cards.length>1?cards.length+' × ':''}${rank}.`;
-  drawUp(p);checkFinish(i);
+  addHistory(G.message);
+  drawUp(p);const finishedNow=checkFinish(i);if(finishedNow)G.message+=` ${p.name} is out!`;
   if(activeCount()<=1){endGame();return true}
   if(!sameTurn||p.finished)advance(1);
   normalizeCurrent();render();maybeAITurn();return true;
 }
 function pickup(i){
   const p=G.players[i];if(!G.pile.length)return;
-  p.hand.push(...G.pile);p.hand=sortCards(p.hand);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;advance(1);render();maybeAITurn();
+  p.hand.push(...G.pile);p.hand=sortCards(p.hand);G.pile=[];G.mustLow=false;G.message=`${p.name} picked up the pile.`;addHistory(G.message);advance(1);render();maybeAITurn();
 }
 function availableZone(p){if(p.hand.length)return 'hand';if(G.draw.length)return 'hand';if(p.face.length)return 'face';return 'down'}
 function legalGroups(p){
@@ -219,7 +223,7 @@ function aiTurn(){
   playCards(i,chooseAIGroup(groups));
 }
 function maybeAITurn(){if(activeCount()<=1){endGame();return}normalizeCurrent();if(G.current!==0)setTimeout(aiTurn,550)}
-function endGame(){G.phase='done';const loser=G.players.find(p=>!p.finished);G.message=`${loser?.name||'Nobody'} is the SHITHEAD.`;render()}
+function endGame(){if(G.phase==='done')return;G.phase='done';const loser=G.players.find(p=>!p.finished);G.message=`${loser?.name||'Nobody'} is the SHITHEAD.`;addHistory(G.message);render()}
 function humanPlay(){
   if(G.current!==0||G.phase!=='play')return;const p=G.players[0],z=availableZone(p);if(z==='down')return;
   const cards=p[z].filter(c=>selectedPlay.includes(c.id));if(playCards(0,cards))selectedPlay=[];
@@ -254,9 +258,10 @@ function render(){
   document.querySelectorAll('#yourDown .card').forEach(el=>el.onclick=()=>humanDown(el.dataset.id));
   const z=availableZone(p);$('playBtn').disabled=G.current!==0||G.phase!=='play'||z==='down'||selectedPlay.length===0;
   $('pickupBtn').disabled=G.current!==0||G.phase!=='play'||G.pile.length===0;
+  const hist=$('turnHistory');if(hist){hist.innerHTML=(G.history||[]).map(x=>`<div class="historyItem">${x}</div>`).join('');const drawer=$('historyDrawer');if(drawer?.classList.contains('open'))drawer.scrollTop=drawer.scrollHeight}
 }
 $('newGame').onclick=()=>deal(parseInt($('playerCount').value));
-$('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);
+$('readyBtn').onclick=startGame;$('playBtn').onclick=humanPlay;$('pickupBtn').onclick=()=>pickup(0);$('historyToggle').onclick=()=>{const d=$('historyDrawer');d.classList.toggle('open');$('historyArrow').textContent=d.classList.contains('open')?'▴':'▾';if(d.classList.contains('open'))d.scrollTop=d.scrollHeight};
 </script>
 </body>
 </html>
