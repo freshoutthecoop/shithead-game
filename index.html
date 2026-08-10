@@ -96,38 +96,45 @@ body{
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Shithead">
 </head>
-<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v54</div>
-<a class="single" href="single.html?v=54">Single Player<p>Working baseline, unchanged.</p></a>
-<a class="multi" href="multiplayer.html?v=54">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
+<body><div class="wrap"><h1>Shithead</h1><div style="color:#d7e6de">Firebase multiplayer v56</div>
+<a class="single" href="single.html?v=56">Single Player<p>Working baseline, unchanged.</p></a>
+<a class="multi" href="multiplayer.html?v=56">Multiplayer<p>Firebase rooms, usernames, and shared leaderboard.</p></a>
 <button id="mainHelpBtn" class="helpBtn" type="button">How to Play</button>
 </div>
 <div id="mainHelpModal" class="modalBack">
   <div class="modal">
     <button id="mainHelpClose" class="closeBtn" type="button">Close</button>
     <h2>How to Play Shithead</h2>
-    <p>Each player starts with 3 face-down cards, 3 face-up cards, and 3 cards in hand. Before play starts, you may swap cards between your hand and face-up cards. The goal is to get rid of all your cards. The last player with cards is the Shithead.</p>
+    <p>Each player starts with <strong>3 face-down cards, 3 face-up cards, and 3 cards in hand</strong>. Before the game begins, you may swap cards between your hand and your face-up cards so you can save useful cards for later.</p>
+
+    <h3>The goal</h3>
+    <p>Get rid of every card you have. Players leave the game as they finish, and play continues until only one person is left. <strong>Try not to be the Shithead: the last player still holding cards.</strong></p>
 
     <h3>Basic play</h3>
-    <p>Play a card of the same rank or higher than the current effective card. You may play multiple cards of the same rank together. If you cannot play, pick up the pile.</p>
+    <p>On a normal turn, you build upward: play a card that is <strong>the same rank as or higher than</strong> the effective card on top of the pile. For example, on a 6 you may normally play a 6, 7, 8, 9, 10, J, Q, K, or A. You may play multiple cards of the same rank together. If you have no legal play, you must pick up the pile.</p>
 
-    <h3>Special cards</h3>
+    <h3>Card rules</h3>
     <ul>
-      <li><strong>2:</strong> resets the count.</li>
-      <li><strong>4:</strong> transparent and replays the effect of the card underneath it.</li>
-      <li><strong>7:</strong> the next player must play 7 or lower.</li>
-      <li><strong>8:</strong> skips one other player per 8 played.</li>
-      <li><strong>10:</strong> clears the pile and you play again. It cannot be played on a 7.</li>
-      <li><strong>Joker:</strong> reverses direction and is transparent for the numerical requirement.</li>
+      <li><strong>3, 5, 6, 9, J, Q, K, A:</strong> normal cards. They follow the usual same-rank-or-higher rule.</li>
+      <li><strong>2:</strong> resets the pile. It can be played as a magic card and the next player may start again from any rank.</li>
+      <li><strong>4:</strong> transparent. Ignore the 4 when deciding what must be played next; the card underneath it still controls play. If a 4 is played on a special card, it repeats that underlying effect.</li>
+      <li><strong>7:</strong> changes the direction of the count for the next play: the next player must play <strong>7 or lower</strong> instead of counting upward. A 10 cannot be played on a 7.</li>
+      <li><strong>8:</strong> skips the next player. Playing multiple 8s skips one player for each 8.</li>
+      <li><strong>10:</strong> clears the entire pile. The player who clears it gets another turn.</li>
+      <li><strong>Joker:</strong> reverses the direction of play. Like a 4, it is transparent when determining the numerical requirement for the next card.</li>
     </ul>
 
     <h3>Four of a kind</h3>
-    <p>Four of any rank in a row clears the pile and the player who completes it plays again. Transparent 4s do not interrupt a run of another rank.</p>
+    <p>If four cards of the same rank appear consecutively in the pile, the pile is cleared and the player who completes the four-of-a-kind plays again. Transparent 4s do not break a run of another rank.</p>
 
-    <h3>Drawing and endgame</h3>
-    <p>While the draw pile remains, draw back up to 3 cards after your turn. Once the draw pile is gone and your hand is empty, play your face-up cards. After those are gone, blind-flip your face-down cards one at a time.</p>
+    <h3>Your cards</h3>
+    <p>While cards remain in the draw pile, you draw back up to <strong>3 cards in your hand</strong> after your turn. Once the draw pile is empty, keep playing from your hand until it is gone. Then play your <strong>face-up cards</strong>. Once those are gone, you must <strong>blind-flip your face-down cards one at a time</strong>. If a blind-flipped card cannot legally be played, you pick up the pile.</p>
+
+    <h3>Winning and losing</h3>
+    <p>Getting rid of your final card takes you out of the game. Everyone else keeps playing. The game ends only when one player remains, and that player is the <strong>Shithead</strong>.</p>
 
     <h3>Walkthrough mode</h3>
-    <p>Walkthrough can be toggled on to highlight cards that are legal to play. Face-down cards are never revealed by the walkthrough.</p>
+    <p>Turn Walkthrough on if you want the game to highlight cards that are currently legal to play. It will never reveal your face-down cards.</p>
   </div>
 </div>
 
@@ -144,7 +151,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=54');
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=56');
       reg.update();
     } catch (e) {
       console.warn('Service worker update failed', e);

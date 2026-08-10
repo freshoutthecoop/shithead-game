@@ -746,9 +746,23 @@ function cardHTML(c,o={}){
 }
 function normalizePlayers(obj){
   if(!obj)return [];
-  return Array.isArray(obj)?obj.filter(Boolean):Object.values(obj);
+  const arr=Array.isArray(obj)?obj.filter(Boolean):Object.values(obj);
+  // Lobby objects still have joinedAt. Sort them deterministically before the first deal.
+  return [...arr].sort((a,b)=>{
+    const aj=Number(a?.joinedAt||0), bj=Number(b?.joinedAt||0);
+    if(aj!==bj)return aj-bj;
+    return String(a?.id||'').localeCompare(String(b?.id||''));
+  });
 }
-function getPlayers(){return normalizePlayers(room?.players)}
+function orderedPlayers(obj,order){
+  const arr=Array.isArray(obj)?obj.filter(Boolean):Object.values(obj||{});
+  if(!Array.isArray(order)||!order.length)return normalizePlayers(obj);
+  const byId=new Map(arr.map(p=>[p.id,p]));
+  const ordered=order.map(id=>byId.get(id)).filter(Boolean);
+  const extras=arr.filter(p=>!order.includes(p.id)).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  return [...ordered,...extras];
+}
+function getPlayers(){return orderedPlayers(room?.players,room?.playerOrder)}
 function me(){return getPlayers().find(p=>p.id===myId)}
 function game(){return room?.game||null}
 
@@ -832,6 +846,7 @@ async function deal(){
     if(!cur||cur.phase!=='lobby')return cur;
     const players=normalizePlayers(cur.players);
     if(players.length<2)return cur;
+    cur.playerOrder=players.map(p=>p.id);
     const deck=makeDeck(players.length);
     const ps=players.map(p=>({id:p.id,uid:p.uid||p.id,name:p.name,hand:[],face:[],down:[],ready:false,finished:false}));
     for(let r=0;r<3;r++)for(const p of ps)p.down.push(deck.pop());
@@ -895,7 +910,7 @@ async function ready(){
   await roomRef.transaction(cur=>{
     if(!cur||cur.phase!=='setup')return cur;
     if(cur.players?.[myId])cur.players[myId].ready=true;
-    const players=normalizePlayers(cur.players);
+    const players=orderedPlayers(cur.players,cur.playerOrder);
     if(players.length&&players.every(p=>p.ready)){
       cur.phase='play';
       let candidates=[];
@@ -984,7 +999,19 @@ function skipAdvance(g,players,skipCount){
   }while(players[g.current].finished);
 }
 function advance(g,players,n){
-  for(let x=0;x<n;x++){let guard=0;do{g.current=(g.current+g.direction+players.length)%players.length;guard++}while(players[g.current].finished&&guard<=players.length)}
+  if(!players.length)return;
+  if(!Number.isInteger(g.current)||g.current<0||g.current>=players.length){
+    const first=players.findIndex(p=>!p.finished);
+    g.current=first>=0?first:0;
+    return;
+  }
+  for(let x=0;x<n;x++){
+    let guard=0;
+    do{
+      g.current=(g.current+g.direction+players.length)%players.length;
+      guard++;
+    }while(players[g.current]?.finished&&guard<=players.length);
+  }
 }
 function keepOrAdvanceAfterFinish(cur,players,i){
   if(cur.phase!=='play')return;
@@ -1092,7 +1119,7 @@ async function playSelected(){
   const ids=[...selectedPlay];selectedPlay=[];
   await roomRef.transaction(cur=>{
     if(!cur||cur.phase!=='play')return cur;
-    const players=normalizePlayers(cur.players),g=cur.game;
+    const players=orderedPlayers(cur.players,cur.playerOrder),g=cur.game;
     const i=players.findIndex(p=>p.id===myId);if(i!==g.current)return cur;
     const p=players[i],z=activeZone(p,g);if(z==='down')return cur;
     p[z]=p[z]||[];
@@ -1210,7 +1237,7 @@ async function playSelected(){
 async function pickup(){
   await roomRef.transaction(cur=>{
     if(!cur||cur.phase!=='play')return cur;
-    const players=normalizePlayers(cur.players),g=cur.game;
+    const players=orderedPlayers(cur.players,cur.playerOrder),g=cur.game;
     const i=players.findIndex(p=>p.id===myId);if(i!==g.current||!(g.pile||[]).length)return cur;
     const p=players[i];const picked=(g.pile||[]).length;p.hand=p.hand||[];p.hand.push(...g.pile);p.hand=sortCards(p.hand);g.pile=[];g.mustLow=false;g.message=`${p.name} picked up the pile.`;addHistoryToRoom(cur,`${p.name} picked up ${picked} card${picked===1?'':'s'}.`,'pickup');advance(g,players,1);
     cur.players=Object.fromEntries(players.map(x=>[x.id,x]));return cur;
@@ -1220,7 +1247,7 @@ async function pickup(){
 async function playDown(id){
   await roomRef.transaction(cur=>{
     if(!cur||cur.phase!=='play')return cur;
-    const players=normalizePlayers(cur.players),g=cur.game;
+    const players=orderedPlayers(cur.players,cur.playerOrder),g=cur.game;
     const i=players.findIndex(p=>p.id===myId);if(i!==g.current)return cur;
     const p=players[i];if(activeZone(p,g)!=='down')return cur;
     p.down=p.down||[];
@@ -1239,6 +1266,8 @@ async function playDown(id){
       cur.lastBlindReveal={name:p.name,card:c,ts:Date.now()};
       addHistoryToRoom(cur,`${p.name} blind flipped ${c.rank}${c.suit||''}, could not play it, and picked up the pile.`,'blind');
       advance(g,players,1);
+      const next=players[g.current];
+      if(next&&!next.finished)g.message+=` ${next.name}'s turn.`;
       cur.players=Object.fromEntries(players.map(x=>[x.id,x]));
       return cur;
     }
@@ -1374,10 +1403,11 @@ async function startRematch(){
   if(!isHost)return;
   await roomRef.transaction(cur=>{
     if(!cur)return cur;
+    const ordered=orderedPlayers(cur.players,cur.playerOrder);
     const terminal = cur.phase==='done' || !!cur.game?.shithead || !!cur.game?.gameOver ||
-      (normalizePlayers(cur.players).length>1 && normalizePlayers(cur.players).filter(p=>!p.finished).length<=1);
+      (ordered.length>1 && ordered.filter(p=>!p.finished).length<=1);
     if(!terminal)return cur;
-    const players=normalizePlayers(cur.players);
+    const players=ordered;
     const ready=cur.replayReady||{};
     if(players.length<2 || !players.every(p=>ready[p.id]))return cur;
 
