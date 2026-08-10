@@ -5,15 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Shithead</title>
 <link rel="stylesheet" href="styles.css" />
+<style>
+.homeScreen{
+  max-width:720px;
+  margin:0 auto;
+  padding:calc(env(safe-area-inset-top, 0px) + 28px) 18px 40px;
+  color:#fff;
+}
+.homeBrand{
+  font-size:42px;
+  line-height:1;
+  font-weight:950;
+  margin:18px 0 10px;
+}
+.homeSub{
+  color:rgba(255,255,255,.78);
+  font-size:16px;
+  margin-bottom:28px;
+}
+.homeActions{
+  display:grid;
+  gap:12px;
+}
+.homeAction{
+  display:block;
+  width:100%;
+  border:0;
+  border-radius:16px;
+  padding:17px 18px;
+  font:inherit;
+  font-size:18px;
+  font-weight:900;
+  text-align:center;
+  text-decoration:none;
+  cursor:pointer;
+  background:#fff;
+  color:#173b2a;
+}
+.homeAction.primary{
+  background:#ffd166;
+  color:#29220d;
+}
+.howToPanel{
+  margin-top:14px;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:16px;
+  background:rgba(0,0,0,.14);
+  display:none;
+}
+.howToPanel.open{display:block}
+.howToPanel h2{margin:0 0 10px;font-size:22px}
+.howToPanel p{margin:8px 0;line-height:1.45;color:rgba(255,255,255,.9)}
+</style>
 </head>
 <body>
-<div class="launch">
-  <div class="brand">Shithead</div>
-  <button id="singleBtn" class="mode active">Single Player</button>
-  <button id="multiBtn" class="mode">Multiplayer</button>
-</div>
-<iframe id="singleFrame" class="frame" title="Single Player" src="singleplayer.html"></iframe>
-<iframe id="multiFrame" class="frame hidden" title="Multiplayer" src="multiplayer.html"></iframe>
-<script src="app.js"></script>
+<main class="homeScreen">
+  <div class="homeBrand">Shithead</div>
+  <div class="homeSub">Choose a game mode.</div>
+
+  <div class="homeActions">
+    <a class="homeAction primary" href="./singleplayer.html">Single Player</a>
+    <a class="homeAction" href="./multiplayer.html">Multiplayer</a>
+    <button class="homeAction" id="howToBtn" type="button" aria-expanded="false">How to Play</button>
+  </div>
+
+  <section class="howToPanel" id="howToPanel">
+    <h2>How to Play</h2>
+    <p>Get rid of all of your cards before everyone else. Play a legal card on the pile according to the current card and any special-card rules.</p>
+    <p>When your hand is gone, continue with your face-up cards, then your face-down cards. Players who finish are removed from the turn rotation. The last player remaining is the Shithead.</p>
+  </section>
+</main>
+
+<script>
+const howToBtn=document.getElementById('howToBtn');
+const howToPanel=document.getElementById('howToPanel');
+howToBtn.addEventListener('click',()=>{
+  const open=howToPanel.classList.toggle('open');
+  howToBtn.setAttribute('aria-expanded', String(open));
+});
+</script>
 </body>
 </html>
